@@ -23,6 +23,7 @@ char * uc_mem_read_string(uc_engine *uc, uint64_t uc_addr, size_t maxlen)
     char *s = 0;
     char *sp = 0;
     size_t len = MIN(256, maxlen);
+    unsigned char hn, ln;
     int i,j;
 
     s = xmalloc(len);
@@ -35,11 +36,21 @@ char * uc_mem_read_string(uc_engine *uc, uint64_t uc_addr, size_t maxlen)
 
     sp = xmalloc(len);
     memset(sp, 0, len);
-    len = strnlen(s, 255);
     for (i=0, j=0; i < len && j < len; i++, j++) {
         switch(s[i]) {
             default:
-                sp[j] = s[i];
+                if (s[i] >= 32 && s[i] <= 126) {
+                    sp[j] = s[i];
+                } else {
+                    hn = (s[i] & 0xf0) >> 4;
+                    hn += (hn > 9) ? 87 : 48;
+                    ln = s[i] & 0xf;
+                    ln += (ln > 9) ? 87 : 48;
+                    sp[j] = '\\';
+                    sp[++j] = 'x';
+                    sp[++j] = hn;
+                    sp[++j] = ln;
+                }
                 break;
             case '\n':
                 sp[j] = '\\';

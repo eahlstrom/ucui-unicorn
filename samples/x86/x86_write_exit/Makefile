@@ -8,7 +8,7 @@ elf: FORCE
 	ld -o write_exit.elf write_exit.o
 
 ucui:
-	ucui -a x86 -m 32 write_exit
+	../../../build/ucui -a x86 -m 32 write_exit
 
 clean:
 	rm -f write_exit *.o
