@@ -10,3 +10,4 @@ Navigation:
   <F8>/Enter  - Step
   <F9>        - Run to breakpoint (set with -b) or to the end.
   D           - Re-disassemble code. when you have a polymorpic code this is handy.
+                Test with: ucui -b 0x00400048 -R samples/x86/shellcodes/execve_rot7.sc
