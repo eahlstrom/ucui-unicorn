@@ -1,0 +1,9 @@
+Install capstone and unicorn-engine (unless it's installed):
+  $ make capstone unicorn
+  $ sudo make capstone_install unicorn_install
+
+Build and install ucui
+  $ make
+  $ sudo make install
+
+
