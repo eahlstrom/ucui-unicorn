@@ -10,7 +10,7 @@ got_addr_of_str:
   mov eax, 4  ; sys_write
   mov ebx, 1  ; stdout
   pop ecx     ; *str
-  mov edx, 20 ; length
+  mov edx, 28 ; length
   int 0x80
 
   mov eax, 1      ; system call (sys_exit)
@@ -19,5 +19,5 @@ got_addr_of_str:
 
 addr_of_str:
   call got_addr_of_str
-  db 'this string is in the code', '\n'
+  db 'this string is in the code', 0xa
 

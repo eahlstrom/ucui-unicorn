@@ -11,6 +11,6 @@ ucui:
 	ucui -a x86 -m 32 write_exit
 
 clean:
-	rm write_exit
+	rm -f write_exit *.o
 
 FORCE:
