@@ -18,11 +18,11 @@ uint32_t uc_mem_read_uint32_t(uc_engine *uc, uint64_t uc_addr)
     return(val);
 }
 
-char * uc_mem_read_string(uc_engine *uc, uint64_t uc_addr)
+char * uc_mem_read_string(uc_engine *uc, uint64_t uc_addr, size_t maxlen)
 {
     char *s = 0;
     char *sp = 0;
-    size_t len = 256;
+    size_t len = MIN(256, maxlen);
     int i,j;
 
     s = xmalloc(len);
@@ -82,7 +82,7 @@ char * const_char_array_string(uc_engine *uc, void *saddr)
             str_addr = (opts->mode == MODE_32 ? uc_mem_read_uint32_t(uc, ptr_addr) : uc_mem_read_uint64_t(uc, ptr_addr));
             if (str_addr == 0)
                 break;
-            s = uc_mem_read_string(uc, str_addr);
+            s = uc_mem_read_string(uc, str_addr, 255);
             snprintf(s2, 260, "%s\"%s\"", (i>0 ? ", " : ""), s);
             strncat(ms, s2, 260);
             xfree(s);
