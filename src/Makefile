@@ -1,10 +1,11 @@
+BINNAME=ucui
 CC=gcc
-CFLAGS=-c -Wall -ggdb
+CFLAGS=-c -Wall -ggdb -DBINNAME='"$(BINNAME)"'
 LDFLAGS=-lcapstone -lncurses -lunicorn
 SOURCES=main.c capstone.c readfile.c utils.c hexdump.c unicorn_x86.c unicorn_x64.c unicorn_arm.c syscall.c syscall_linux.c
 INC=-I../include
 OBJECTS=$(SOURCES:.c=.o)
-EXECUTABLE=../build/ucui
+EXECUTABLE=../build/$(BINNAME)
 
 all: $(SOURCES) $(EXECUTABLE)
     

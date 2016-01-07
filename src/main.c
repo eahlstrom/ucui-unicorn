@@ -150,7 +150,7 @@ void handle_keyboard(uc_engine *uc, uint64_t address, uint32_t size, void *user_
 
 void usage(void)
 {
-    printf("cap [OPTION]... file\n");
+    printf("%s [OPTION]... file\n", BINNAME);
     printf("\n");
     printf(" -a ARCH (x86 or ARM. Default: x86)\n");
     printf(" -m MODE (32 or 64. Default: 32)\n");

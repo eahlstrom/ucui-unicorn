@@ -1,3 +1,7 @@
+#ifndef BINNAME
+# define BINNAME "ucui"
+#endif
+
 #ifndef _ucui_h
 #define _ucui_h
 
