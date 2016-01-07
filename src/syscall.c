@@ -1,0 +1,99 @@
+#include "ucui.h"
+
+uint64_t uc_mem_read_uint64_t(uc_engine *uc, uint64_t uc_addr)
+{
+    uint64_t val;
+    if (uc_mem_read(uc, uc_addr, &val, sizeof(uint64_t)) != UC_ERR_OK) {
+        val = -1;
+    }
+    return(val);
+}
+
+uint32_t uc_mem_read_uint32_t(uc_engine *uc, uint64_t uc_addr)
+{
+    uint32_t val;
+    if (uc_mem_read(uc, uc_addr, &val, sizeof(uint32_t)) != UC_ERR_OK) {
+        val = -1;
+    }
+    return(val);
+}
+
+char * uc_mem_read_string(uc_engine *uc, uint64_t uc_addr)
+{
+    char *s = 0;
+    char *sp = 0;
+    size_t len = 256;
+    int i,j;
+
+    s = xmalloc(len);
+    memset(s, 0, len);
+
+    if (uc_mem_read(uc, uc_addr, s, len-1) != UC_ERR_OK) {
+        sprintf(s, "*((char*)0x%lx)", uc_addr);
+        return(s);
+    }
+
+    sp = xmalloc(len);
+    memset(sp, 0, len);
+    len = strnlen(s, 255);
+    for (i=0, j=0; i < len && j < len; i++, j++) {
+        switch(s[i]) {
+            default:
+                sp[j] = s[i];
+                break;
+            case '\n':
+                sp[j] = '\\';
+                sp[++j] = 'n';
+                break;
+            case '\r':
+                sp[j] = '\\';
+                sp[++j] = 'r';
+                break;
+            case '\t':
+                sp[j] = '\\';
+                sp[++j] = 't';
+                break;
+        }
+    }
+
+    xfree(s);
+    return(sp);
+}
+
+//
+// prints "const char *const array[]" arguments
+//
+char * const_char_array_string(uc_engine *uc, void *saddr)
+{
+    uint64_t ptr_addr;
+    uint64_t str_addr;
+    char *s = 0, *s2 = 0, *ms = 0;
+    int i;
+
+    s2 = xmalloc(260);
+    ms = xmalloc(260*4);
+    memset(ms, 0, (260*4));
+
+    ptr_addr = (opts->mode == MODE_32 ? *((uint32_t*)saddr) : *((uint64_t*)saddr));
+    if (ptr_addr != 0) {
+        sprintf(ms, "[");
+        
+        for (i=0; i<4; i++) {
+            str_addr = (opts->mode == MODE_32 ? uc_mem_read_uint32_t(uc, ptr_addr) : uc_mem_read_uint64_t(uc, ptr_addr));
+            if (str_addr == 0)
+                break;
+            s = uc_mem_read_string(uc, str_addr);
+            snprintf(s2, 260, "%s\"%s\"", (i>0 ? ", " : ""), s);
+            strncat(ms, s2, 260);
+            xfree(s);
+            ptr_addr += (opts->mode == MODE_32 ? 4 : 8);
+        }
+        strcat(ms, "]");
+    } else {
+        consw("NULL");
+    }
+    xfree(s2);
+
+    return(ms);
+}
+

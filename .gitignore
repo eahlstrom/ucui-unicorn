@@ -1,0 +1,7 @@
+*~
+*.swp
+build/*
+src/*.o
+a.out
+dev/*
+src/tags
