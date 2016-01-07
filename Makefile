@@ -1,5 +1,5 @@
 
-all: ucui install
+all: ucui
 
 ucui:
 	cd src; make
