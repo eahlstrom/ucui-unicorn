@@ -4,13 +4,13 @@ all: ucui
 ucui:
 	cd src; make
 
-capstone: FORCE
+capstone: submodules FORCE
 	cd capstone; ./make.sh
 
 capstone_install:
 	cd capstone; make install
 
-unicorn: FORCE
+unicorn: submodules FORCE
 	cd unicorn; ./make.sh
 
 unicorn_install:
@@ -21,5 +21,9 @@ install:
 
 uninstall:
 	rm /usr/local/bin/ucui
+
+submodules:
+	git submodule init
+	git submodule update
 
 FORCE:
