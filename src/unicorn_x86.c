@@ -140,7 +140,14 @@ static void hook_intr_x86(uc_engine *uc, uint32_t intno, void *user_data)
         hook_intr_x86_linux(uc, intno, user_data);
     } else {
         uc_reg_read(uc, UC_X86_REG_EIP, &r_eip);
-        consw_info("%08x INT %02x: no os handler defined for syscall descrambling\n", r_eip, intno);
+        consw_info("%08x INT 0x%02x - ", r_eip, intno);
+        switch(intno) {
+            case 0x0d:
+                consw("General Protection Fault\n");
+                break;
+            default:
+                consw("Unknown interupt\n");
+        }
     }
 }
 
