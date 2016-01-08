@@ -184,6 +184,7 @@ struct options *parseopts(int argc, char **argv)
     int c;
     char *s;
     int i, cnt;
+    char *initial_reg_file = NULL;
 
     opts = xmalloc(sizeof(struct options));
 
@@ -238,7 +239,7 @@ struct options *parseopts(int argc, char **argv)
                 break;
 
             case 'r':   // init registers
-                opts->initial_regs = init_registers_from_file(optarg);
+                initial_reg_file = optarg;
                 break;
 
             case 'R':
@@ -265,6 +266,10 @@ struct options *parseopts(int argc, char **argv)
         }
     }
     opts->scfile = argv[optind];
+    
+    if (initial_reg_file)
+        opts->initial_regs = init_registers_from_file(initial_reg_file);
+
     if (opts->scfile == NULL) {
         usage();
         exit(1);
