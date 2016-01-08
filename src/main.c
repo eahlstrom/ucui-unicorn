@@ -174,13 +174,13 @@ void usage(void)
     printf(" -m MODE (32 or 64. Default: 32)\n");
     printf(" -B BASEADDR (Default: 0x400000)\n");
     // printf(" -O OS (linux). Default: linux)\n");
+    printf(" -r init_regs_file\n");
     printf(" -b breakpoint_address[,breakpoint_address,...]\n");
     printf(" -R (start in RUN mode)\n");
 }
 
 struct options *parseopts(int argc, char **argv)
 {
-    struct options *opts;
     int c;
     char *s;
     int i, cnt;
@@ -191,10 +191,11 @@ struct options *parseopts(int argc, char **argv)
     opts->arch = X86;
     opts->mode = MODE_32;
     opts->baseaddress = 0x400000;
+    opts->initial_regs = NULL;
     stepmode = STEP;
     opts->os = LINUX;
 
-    while ((c = getopt(argc, argv, "a:m:B:b:O:R?")) != -1) {
+    while ((c = getopt(argc, argv, "a:m:B:b:O:r:R?")) != -1) {
         switch(c) {
             case 'a': // process arch
                 if (strcmp(optarg, "x86") == 0) {
@@ -236,6 +237,10 @@ struct options *parseopts(int argc, char **argv)
                 }
                 break;
 
+            case 'r':   // init registers
+                opts->initial_regs = init_registers_from_file(optarg);
+                break;
+
             case 'R':
                 stepmode = RUN;
                 break;
@@ -270,7 +275,7 @@ struct options *parseopts(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
-    opts = parseopts(argc, argv);
+    parseopts(argc, argv);
 
     rf = readfile(opts->scfile);
     ncurses_init();

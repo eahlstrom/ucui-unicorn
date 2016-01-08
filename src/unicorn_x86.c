@@ -158,8 +158,17 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
     uc_err err;
     uc_hook trace1, trace2;
     struct x86_regs *r;
+    bool regs_from_file = false;
 
-    int r_esp = baseaddress + 0x200000;  // ESP register
+    if (opts->initial_regs) {
+        r = opts->initial_regs;
+        regs_from_file = true;
+    } else {
+        r = xmalloc(sizeof(struct x86_regs));
+        memset(r, 0, sizeof(struct x86_regs));
+        r->esp = baseaddress + 0x200000;
+        r->eip = baseaddress;
+    }
 
     consw_info("Emulate i386 code\n");
 
@@ -195,7 +204,15 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
     }
 
     // initialize machine registers
-    uc_reg_write(uc, UC_X86_REG_ESP, &r_esp);
+    if (r->eax != 0) { uc_reg_write(uc, UC_X86_REG_EAX, &r->eax); }
+    if (r->ebx != 0) { uc_reg_write(uc, UC_X86_REG_EBX, &r->ebx); }
+    if (r->ecx != 0) { uc_reg_write(uc, UC_X86_REG_ECX, &r->ecx); }
+    if (r->edx != 0) { uc_reg_write(uc, UC_X86_REG_EDX, &r->edx); }
+    if (r->esi != 0) { uc_reg_write(uc, UC_X86_REG_ESI, &r->esi); }
+    if (r->edi != 0) { uc_reg_write(uc, UC_X86_REG_EDI, &r->edi); }
+    if (r->ebp != 0) { uc_reg_write(uc, UC_X86_REG_EBP, &r->ebp); }
+    if (r->esp != 0) { uc_reg_write(uc, UC_X86_REG_ESP, &r->esp); }
+    if (r->eflags != 0) { uc_reg_write(uc, UC_X86_REG_EFLAGS, &r->eflags); }
 
     // tracing all instructions by having @begin > @end
     uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_x86, NULL, 1, 0);
@@ -203,10 +220,10 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
     // handle interrupt ourself
     uc_hook_add(uc, &trace2, UC_HOOK_INTR, hook_intr_x86, NULL);
 
-    uc_running = true;
     // emulate machine code in infinite time
-    // err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_SELF), 0, 12); <--- emulate only 12 instructions
-    err = uc_emu_start(uc, baseaddress, baseaddress + len, 0, 0);
+    // uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
+    uc_running = true;
+    err = uc_emu_start(uc, r->eip, baseaddress + len, 0, 0);
     if (err) {
         consw_err("uc_emu_start() error %u: %s\n", err, uc_strerror(err));
         goto finish;
@@ -214,6 +231,8 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
 
 
 finish:
+    if (!regs_from_file)
+        xfree(r);
     uc_running = false;
     consw_info("Emulation done.\n");
     // Give the user a change to browse around in the asm window before restart
@@ -223,6 +242,7 @@ finish:
 
     uc_close(uc);
     xfree(prev_regs_x86);
+    xfree(r);
 
     return(0);
 

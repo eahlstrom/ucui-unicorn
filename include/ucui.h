@@ -19,6 +19,7 @@
 #include <unicorn/unicorn.h>
 
 #include "syscall.h"
+#include "init.h"
 
 #define MIN(a, b) (a < b? a : b)
 #define MAX(a, b) (a > b? a : b)
@@ -92,6 +93,7 @@ struct options {
   uint64_t baseaddress;
   char *scfile;
   enum emulate_os os;
+  void * initial_regs;
 };
 
 enum stepmodes {
