@@ -163,19 +163,19 @@ int32_t linux_syscall_printw(
             break;
 
         case SYS_OPEN:
-            s1 = uc_mem_read_string(uc, *((uint32_t*)arg0), 255);
+            s1 = uc_mem_read_string(uc, *((uint32_t*)arg0), 255, true);
             ret = rand() & 0xff;
             consw("SYS_OPEN(\"%s\", 0x%x, 0x%x) = %d\n", s1, *((int*)arg1), *((int*)arg2), ret);
             break;
 
         case SYS_WRITE:
-            s1 = uc_mem_read_string(uc, *((uint32_t*)arg1), *((uint32_t*)arg2));
+            s1 = uc_mem_read_string(uc, *((uint32_t*)arg1), *((uint32_t*)arg2), false);
             ret = *((uint32_t*)arg2);
             consw("SYS_WRITE(%d, \"%s\", %d) = %d\n", *((uint8_t*)arg0), s1, *((uint32_t*)arg2), ret);
             break;
 
         case SYS_EXECVE:
-            s1 = uc_mem_read_string(uc, *((uint32_t*)arg0), 255);
+            s1 = uc_mem_read_string(uc, *((uint32_t*)arg0), 255, true);
             s2 = const_char_array_string(uc, arg1);
             s3 = const_char_array_string(uc, arg2);
             consw("SYS_EXECVE(\"%s\", %s, %s)\n", s1, s2, s3);
@@ -192,7 +192,7 @@ int32_t linux_syscall_printw(
             break;
 
         case SYS_CHMOD:
-            s1 = uc_mem_read_string(uc, *((uint32_t*)arg0), 255);
+            s1 = uc_mem_read_string(uc, *((uint32_t*)arg0), 255, true);
             consw("SYS_CHMOD(\"%s\", 0%o)\n", s1, *((mode_t*)arg1));
             break;
 

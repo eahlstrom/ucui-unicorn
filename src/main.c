@@ -89,23 +89,24 @@ bool should_break(uint64_t ip)
     return(false);
 }
 
-void redissasemle_code(uc_engine *uc)
+void redisassemble_code(uc_engine *uc, uint64_t address, size_t len)
 {
     uint8_t *new_code;
+    uc_err err;
 
-    new_code = xmalloc(rf->len);
-    if (uc_mem_read(uc, baseaddr, new_code, rf->len) == UC_ERR_OK) {
+    new_code = xmalloc(len);
+    err = uc_mem_read(uc, address, new_code, len);
+    if (err == UC_ERR_OK) {
+        xfree(diss);
         if (opts->arch == X86 && opts->mode == MODE_32) {
-            diss = disass(new_code, rf->len, baseaddr, CS_ARCH_X86, CS_MODE_32);
+            diss = disass(new_code, len, address, CS_ARCH_X86, CS_MODE_32);
         } else if (opts->arch == X86 && opts->mode == MODE_64) {
-            diss = disass(new_code, rf->len, baseaddr, CS_ARCH_X86, CS_MODE_64);
+            diss = disass(new_code, len, address, CS_ARCH_X86, CS_MODE_64);
         } else if (opts->arch == ARM && opts->mode == MODE_32) {
-            diss = disass(rf->bytes, rf->len, baseaddr, CS_ARCH_ARM, CS_MODE_ARM);
-        } else {
-            consw_err("unknown arch and mode\n");
+            diss = disass(new_code, len, address, CS_ARCH_ARM, CS_MODE_ARM);
         }
     } else {
-        consw_err("redisassm failed\n");
+        consw_err("uc_mem_read %u bytes @ 0x%08llx. error %u: %s\n", len, address, err, uc_strerror(err));
     }
     xfree(new_code);
 }
@@ -114,7 +115,24 @@ void handle_keyboard(uc_engine *uc, uint64_t address, uint32_t size, void *user_
 {
     int ch;
 
+    verify_visible_ip(address);
     while(true) {
+        if (!ip_aligned_to_disassembly(address) && uc_running) {
+            uint32_t len;
+            consw_info("IP not aligned to disassembly @ %08x.", address);
+            if (opts->baseaddress <= address && (opts->baseaddress+rf->len) >= address) {
+                consw(" Re-disassembling at this address...\n");
+                len = rf->len - (address - opts->baseaddress);
+                consw_info("len: %u\n", len);
+                // hexdump(rf->bytes+(address-opts->baseaddress), len, address);
+                redisassemble_code(uc, address, len);
+                spos = 0;
+            } else {
+                consw(" Address is out-of-bounds.\n");
+                uc_emu_stop(uc);
+                return;
+            }
+        }
         printwass(spos, (asswl.nlines-2), address);
         ch = getch();
         switch(ch) {
@@ -128,8 +146,8 @@ void handle_keyboard(uc_engine *uc, uint64_t address, uint32_t size, void *user_
                 break;
             case 'D':
                 consw_info("Re-disassembling code...\n");
-                redissasemle_code(uc);
-                verify_visible_eip(address);
+                redisassemble_code(uc, opts->baseaddress, rf->len);
+                verify_visible_ip(address);
                 break;
             case KEY_F(7):
             case KEY_F(8):
@@ -143,8 +161,8 @@ void handle_keyboard(uc_engine *uc, uint64_t address, uint32_t size, void *user_
             default:
                 wprintw(stdscr, "              ");
         }
-        mvwprintw(stdscr, 0, 15, "key: 0%o(%d)  spos: %d, %d   ", ch, ch, spos, (asswl.nlines-2)+spos);
-        wrefresh(stdscr);
+        // mvwprintw(stdscr, 0, 15, "key: 0%o(%d)  spos: %d, %d diss->count: %d  ", ch, ch, spos, spos+(asswl.nlines-3), diss->count);
+        // wrefresh(stdscr);
     }
 }
 
@@ -155,7 +173,7 @@ void usage(void)
     printf(" -a ARCH (x86 or ARM. Default: x86)\n");
     printf(" -m MODE (32 or 64. Default: 32)\n");
     printf(" -B BASEADDR (Default: 0x400000)\n");
-    printf(" -O OS (linux or FreeBSD). Default: linux)\n");
+    // printf(" -O OS (linux). Default: linux)\n");
     printf(" -b breakpoint_address[,breakpoint_address,...]\n");
     printf(" -R (start in RUN mode)\n");
 }
@@ -257,19 +275,16 @@ int main(int argc, char **argv)
     rf = readfile(opts->scfile);
     ncurses_init();
 
-    baseaddr = opts->baseaddress;
-    // hexdump(rf->bytes, rf->len, baseaddr);
-
     while (true) {
         if (opts->arch == X86 && opts->mode == MODE_32) {
-            diss = disass(rf->bytes, rf->len, baseaddr, CS_ARCH_X86, CS_MODE_32);
-            unicorn_x86(rf->bytes, rf->len, baseaddr);
+            diss = disass(rf->bytes, rf->len, opts->baseaddress, CS_ARCH_X86, CS_MODE_32);
+            unicorn_x86(rf->bytes, rf->len, opts->baseaddress);
         } else if (opts->arch == X86 && opts->mode == MODE_64) {
-            diss = disass(rf->bytes, rf->len, baseaddr, CS_ARCH_X86, CS_MODE_64);
-            unicorn_x64(rf->bytes, rf->len, baseaddr);
+            diss = disass(rf->bytes, rf->len, opts->baseaddress, CS_ARCH_X86, CS_MODE_64);
+            unicorn_x64(rf->bytes, rf->len, opts->baseaddress);
         } else if (opts->arch == ARM && opts->mode == MODE_32) {
-            diss = disass(rf->bytes, rf->len, baseaddr, CS_ARCH_ARM, CS_MODE_ARM);
-            unicorn_arm(rf->bytes, rf->len, baseaddr);
+            diss = disass(rf->bytes, rf->len, opts->baseaddress, CS_ARCH_ARM, CS_MODE_ARM);
+            unicorn_arm(rf->bytes, rf->len, opts->baseaddress);
         } else {
             endwin();
             printf("not supported yet!\n");

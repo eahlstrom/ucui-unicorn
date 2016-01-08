@@ -149,13 +149,11 @@ static void hook_code_x64(uc_engine *uc, uint64_t address, uint64_t size, void *
     uint64_t r_rip;
 
     uc_reg_read(uc, UC_X86_REG_RIP, &r_rip);
-    if (should_break(r_rip) == false)
-        return;
-    verify_visible_eip(r_rip);
-
     printregs_x64(uc);
     printstack_x64(uc);
 
+    if (should_break(r_rip) == false)
+        return;
     handle_keyboard(uc, address, size, user_data);
 }
 

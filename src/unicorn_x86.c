@@ -122,8 +122,6 @@ static void hook_code_x86(uc_engine *uc, uint64_t address, uint32_t size, void *
     uint32_t r_eip;
 
     uc_reg_read(uc, UC_X86_REG_EIP, &r_eip);
-    verify_visible_eip(r_eip);
-
     printregs_x86(uc);
     printstack_x86(uc);
 
@@ -198,6 +196,7 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
     // handle interrupt ourself
     uc_hook_add(uc, &trace2, UC_HOOK_INTR, hook_intr_x86, NULL);
 
+    uc_running = true;
     // emulate machine code in infinite time
     // err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_SELF), 0, 12); <--- emulate only 12 instructions
     err = uc_emu_start(uc, baseaddress, baseaddress + len, 0, 0);
@@ -208,6 +207,7 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
 
 
 finish:
+    uc_running = false;
     consw_info("Emulation done.\n");
     // Give the user a change to browse around in the asm window before restart
     r = read_x86_registers(uc);

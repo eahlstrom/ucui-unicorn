@@ -15,24 +15,31 @@ struct disassembly * disass(uint8_t *code, unsigned int len, uint64_t baseaddr, 
     return diss;
 }
 
-void verify_visible_eip(uint32_t eip)
+void verify_visible_ip(uint32_t ip)
 {
     int i;
 
-    // wprintw(consw, "diss->count: %d\n", diss->count);
     for(i=0; i < diss->count; i++) {
-        // wprintw(consw, "%d - addr: %08x ip: %08x\n", i, diss->insn[i].address, eip);
-        if (diss->insn[i].address >= eip)
+        if (diss->insn[i].address >= ip)
             break;
     }
 
-    // wprintw(consw, "i: %d spos+asswl.nlines-3 = %d\n", i, (spos + asswl.nlines-3));
-    // wrefresh(consw);
     if (i > (spos + asswl.nlines-3)) {
         spos = MAX(i - (asswl.nlines-3), 0);
     } else if (i < spos) {
         spos = i;
     }
+}
+
+bool ip_aligned_to_disassembly(uint32_t ip)
+{
+    int i;
+
+    for(i=0; i < diss->count; i++) {
+        if (diss->insn[i].address == ip)
+            return(true);
+    }
+    return(false);
 }
 
 void printwass(unsigned int startpos, unsigned int lines, uint64_t ip) 

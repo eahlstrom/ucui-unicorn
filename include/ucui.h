@@ -99,6 +99,7 @@ enum stepmodes {
   RUN,
 };
 
+bool uc_running;
 struct options *opts;
 
 struct x86_regs *prev_regs_x86;
@@ -117,7 +118,8 @@ void printwass(unsigned int startpos, unsigned int endpos, uint64_t ip);
 struct disassembly * disass(uint8_t *code, unsigned int len, uint64_t baseaddress, cs_arch arch, cs_mode mode);
 struct readfile * readfile(char *filename);
 void hexdump(uint8_t *code, unsigned int len, uint64_t baseaddress);
-void verify_visible_eip(uint32_t eip);
+void verify_visible_ip(uint32_t ip);
+bool ip_aligned_to_disassembly(uint32_t ip);
 bool should_break(uint64_t ip);
 
 void *xmalloc(size_t size);
@@ -127,7 +129,6 @@ struct win_layout asswl, regswl, conswl, stackwl;
 WINDOW *assw, *regsw, *consw, *stackw;
 struct disassembly *diss;
 struct readfile *rf;
-uint64_t baseaddr;
 unsigned int spos;
 uint64_t *breakpoints;
 enum stepmodes stepmode;

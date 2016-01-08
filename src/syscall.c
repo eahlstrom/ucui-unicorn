@@ -18,7 +18,7 @@ uint32_t uc_mem_read_uint32_t(uc_engine *uc, uint64_t uc_addr)
     return(val);
 }
 
-char * uc_mem_read_string(uc_engine *uc, uint64_t uc_addr, size_t maxlen)
+char * uc_mem_read_string(uc_engine *uc, uint64_t uc_addr, size_t maxlen, bool c_string)
 {
     char *s = 0;
     char *sp = 0;
@@ -42,6 +42,8 @@ char * uc_mem_read_string(uc_engine *uc, uint64_t uc_addr, size_t maxlen)
                 if (s[i] >= 32 && s[i] <= 126) {
                     sp[j] = s[i];
                 } else {
+                    if (c_string)
+                        break;
                     hn = (s[i] & 0xf0) >> 4;
                     hn += (hn > 9) ? 87 : 48;
                     ln = s[i] & 0xf;
@@ -93,7 +95,7 @@ char * const_char_array_string(uc_engine *uc, void *saddr)
             str_addr = (opts->mode == MODE_32 ? uc_mem_read_uint32_t(uc, ptr_addr) : uc_mem_read_uint64_t(uc, ptr_addr));
             if (str_addr == 0)
                 break;
-            s = uc_mem_read_string(uc, str_addr, 255);
+            s = uc_mem_read_string(uc, str_addr, 255, true);
             snprintf(s2, 260, "%s\"%s\"", (i>0 ? ", " : ""), s);
             strncat(ms, s2, 260);
             xfree(s);

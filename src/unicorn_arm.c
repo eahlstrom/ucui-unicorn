@@ -132,13 +132,11 @@ static void hook_code_arm(uc_engine *uc, uint64_t address, uint64_t size, void *
     uint32_t r_pc;
 
     uc_reg_read(uc, UC_ARM_REG_PC, &r_pc);
-    if (should_break(r_pc) == false)
-        return;
-    verify_visible_eip(r_pc);
-
     printregs_arm(uc);
     printstack_arm(uc);
 
+    if (should_break(r_pc) == false)
+        return;
     handle_keyboard(uc, address, size, user_data);
 }
 

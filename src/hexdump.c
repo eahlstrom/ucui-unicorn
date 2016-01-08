@@ -5,27 +5,27 @@ void hexdump(uint8_t *code, unsigned int len, uint64_t baseaddress)
     uint64_t i, j;
 
     for (i=0; i<len; i+=16) {
-        printf("%08lx  ", (i+baseaddress));
+        consw("%08lx  ", (i+baseaddress));
         for (j=0; j<16; j++) {
             if ((i+j) >= len) {
-                printf("   ");
+                consw("   ");
             } else {
-                printf("%02x ", code[i+j]);
+                consw("%02x ", code[i+j]);
             }
             if (j == 7)
-                printf(" ");
+                consw(" ");
         }
         for (j=0; j<16; j++) {
             if (j==0)
-                printf(" |");
+                consw(" |");
             if (code[i+j] >= 33 && code[i+j] <= 126) {
-                printf("%c", code[i+j]);
+                consw("%c", code[i+j]);
             } else {
-                printf(".");
+                consw(".");
             }
             if ((i+j) >= len)
                 break;
         }
-        printf("|\n");
+        consw("|\n");
     }
 }
