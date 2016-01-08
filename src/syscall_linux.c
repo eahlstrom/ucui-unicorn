@@ -159,7 +159,7 @@ int32_t linux_syscall_printw(
 
         case SYS_READ:
             ret = *((uint32_t*)arg2);
-            consw("SYS_READ(%d, %p, %d) = %d\n", *((uint8_t*)arg0), *((uint32_t*)arg1), *((uint32_t*)arg2), ret);
+            consw("SYS_READ(%d, %p, %u) = %u\n", *((uint8_t*)arg0), *((uint32_t*)arg1), *((uint32_t*)arg2), ret);
             break;
 
         case SYS_OPEN:
@@ -171,7 +171,7 @@ int32_t linux_syscall_printw(
         case SYS_WRITE:
             s1 = uc_mem_read_string(uc, *((uint32_t*)arg1), *((uint32_t*)arg2), false);
             ret = *((uint32_t*)arg2);
-            consw("SYS_WRITE(%d, \"%s\", %d) = %d\n", *((uint8_t*)arg0), s1, *((uint32_t*)arg2), ret);
+            consw("SYS_WRITE(%d, \"%s\", %u) = %u\n", *((uint8_t*)arg0), s1, *((uint32_t*)arg2), ret);
             break;
 
         case SYS_EXECVE:
@@ -184,11 +184,11 @@ int32_t linux_syscall_printw(
             break;
 
         case SYS_IOCTL:
-            consw("SYS_IOCTL(%d, %d, 0x%lx)\n", *((uint32_t*)arg0), *((uint32_t*)arg1), *((uint32_t*)arg2));
+            consw("SYS_IOCTL(%u, %u, 0x%lx)\n", *((uint32_t*)arg0), *((uint32_t*)arg1), *((uint32_t*)arg2));
             break;
 
         case SYS_SIGNAL:
-            consw("SYS_SIGNAL(%d, 0x%lx)\n", *((uint32_t*)arg0), *((uint32_t*)arg1));
+            consw("SYS_SIGNAL(%u, 0x%lx)\n", *((uint32_t*)arg0), *((uint32_t*)arg1));
             break;
 
         case SYS_CHMOD:

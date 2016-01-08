@@ -22,14 +22,18 @@ char * uc_mem_read_string(uc_engine *uc, uint64_t uc_addr, size_t maxlen, bool c
 {
     char *s = 0;
     char *sp = 0;
-    size_t len = MIN(256, maxlen);
+    size_t cutoff = 255;
+    size_t len = MIN(cutoff, maxlen);
     unsigned char hn, ln;
     int i,j;
 
-    s = xmalloc(len);
+    if ((uint32_t)maxlen > cutoff)
+        consw("\nWARN: %s:%d uc_mem_read_string(): maxlen(%u) < cutoff(%u). Limiting to %u bytes.\n", __FILE__, __LINE__, maxlen, cutoff, len);
+
+    s = xmalloc(len+1);
     memset(s, 0, len);
 
-    if (uc_mem_read(uc, uc_addr, s, len-1) != UC_ERR_OK) {
+    if (uc_mem_read(uc, uc_addr, s, len) != UC_ERR_OK) {
         sprintf(s, "*((char*)0x%lx)", uc_addr);
         return(s);
     }
