@@ -38,7 +38,7 @@ char * uc_mem_read_string(uc_engine *uc, uint64_t uc_addr, size_t maxlen, bool c
         return(s);
     }
 
-    sp = xmalloc(len);
+    sp = xmalloc(len*2);
     memset(sp, 0, len);
     for (i=0, j=0; i < len && j < len; i++, j++) {
         switch(s[i]) {

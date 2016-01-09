@@ -270,7 +270,9 @@ int32_t linux_syscall_printw(
 
     }
 
-    xfree(s1); xfree(s2); xfree(s3);
+    xfree(s1);
+    xfree(s2);
+    xfree(s3);
     wrefresh(w);
     return(ret);
 }
