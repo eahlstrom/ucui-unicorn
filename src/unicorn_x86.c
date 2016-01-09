@@ -191,6 +191,9 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
     }
     */
 
+    map_and_write_memory(uc, opts->mmap);
+
+    /*
     // map 4MB memory for this emulation
     if ((err = uc_mem_map(uc, baseaddress, 4 * 1024 * 1024, UC_PROT_ALL)) != UC_ERR_OK) {
         consw_err("uc_mem_map() error %u: %s\n", err, uc_strerror(err));
@@ -202,6 +205,7 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
         consw_err("uc_mem_write() error %u: %s\n", err, uc_strerror(err));
         goto error;
     }
+    */
 
     // initialize machine registers
     if (r->eax != 0) { uc_reg_write(uc, UC_X86_REG_EAX, &r->eax); }

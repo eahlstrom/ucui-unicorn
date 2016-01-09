@@ -4,6 +4,7 @@
 
 #ifndef _ucui_h
 #define _ucui_h
+#define _GNU_SOURCE
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -15,11 +16,13 @@
 #include <errno.h>
 #include <ncurses.h>
 #include <signal.h>
+#include <libgen.h>
 #include <capstone/capstone.h>
 #include <unicorn/unicorn.h>
 
 #include "syscall.h"
 #include "init.h"
+#include "memory_map.h"
 
 #define MIN(a, b) (a < b? a : b)
 #define MAX(a, b) (a > b? a : b)
@@ -94,6 +97,7 @@ struct options {
   char *scfile;
   enum emulate_os os;
   void * initial_regs;
+  struct memory_map *mmap;
 };
 
 enum stepmodes {

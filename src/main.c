@@ -149,6 +149,9 @@ void handle_keyboard(uc_engine *uc, uint64_t address, uint32_t size, void *user_
                 redisassemble_code(uc, opts->baseaddress, rf->len);
                 verify_visible_ip(address);
                 break;
+            case 'M':
+                print_memory_map(opts->mmap);
+                break;
             case KEY_F(7):
             case KEY_F(8):
             case KEY_ENTER:
@@ -168,15 +171,29 @@ void handle_keyboard(uc_engine *uc, uint64_t address, uint32_t size, void *user_
 
 void usage(void)
 {
-    printf("%s [OPTION]... file\n", BINNAME);
+    printf("%s [OPTION]... [file]\n", BINNAME);
     printf("\n");
-    printf(" -a ARCH (x86 or ARM. Default: x86)\n");
-    printf(" -m MODE (32 or 64. Default: 32)\n");
-    printf(" -B BASEADDR (Default: 0x400000)\n");
-    // printf(" -O OS (linux). Default: linux)\n");
-    printf(" -r init_regs_file\n");
-    printf(" -b breakpoint_address[,breakpoint_address,...]\n");
-    printf(" -R (start in RUN mode)\n");
+    printf("Options:\n");
+    printf(" -a ARCH                  CPU Arch. (x86 or ARM. Default: x86)\n");
+    printf(" -m MODE                  CPU mode. (32 or 64. Default: 32)\n");
+    printf(" -B BASEADDR              Set baseaddress. (Default: 0x400000)\n");
+    // printf(" -O OS                    (linux). Default: linux).\n");
+    printf(" -r FILE                  Set initial values of registers.\n");
+    printf(" -M FILE                  Load a memory map. (-r required).\n");
+    printf("                          Overrides file and BASEADDRESS.\n");
+    printf(" -b bp_addr[,bp_addr,..]  Set breakpoint(s).\n");
+    printf(" -R                       Start in RUN(<F9>) mode\n");
+    printf("\n");
+    printf("UI navigation:\n");
+    printf("  <F9>                    Run to next breakpoint or until end.\n");
+    printf("  <F7> or <Enter>         Single step.\n");
+    printf("  D                       Re-disassemble code.\n");
+    printf("  <Up> / <Down>           Scroll disassembly window.\n");
+    printf("\n");
+    printf("\nExamples:\n");
+    printf("  $ %s ./sample_x86.shellcode\n", BINNAME);
+    printf("  $ %s -a ARM ./sample_arm.shellcode\n", BINNAME);
+    printf("  $ %s -M ./memory_map -r ./registers\n", BINNAME);
 }
 
 struct options *parseopts(int argc, char **argv)
@@ -185,6 +202,7 @@ struct options *parseopts(int argc, char **argv)
     char *s;
     int i, cnt;
     char *initial_reg_file = NULL;
+    char *memory_map_file = NULL;
 
     opts = xmalloc(sizeof(struct options));
 
@@ -193,10 +211,11 @@ struct options *parseopts(int argc, char **argv)
     opts->mode = MODE_32;
     opts->baseaddress = 0x400000;
     opts->initial_regs = NULL;
+    opts->mmap = NULL;
     stepmode = STEP;
     opts->os = LINUX;
 
-    while ((c = getopt(argc, argv, "a:m:B:b:O:r:R?")) != -1) {
+    while ((c = getopt(argc, argv, "a:m:B:b:O:r:M:R?")) != -1) {
         switch(c) {
             case 'a': // process arch
                 if (strcmp(optarg, "x86") == 0) {
@@ -242,6 +261,10 @@ struct options *parseopts(int argc, char **argv)
                 initial_reg_file = optarg;
                 break;
 
+            case 'M':   // load memory segments
+                memory_map_file = optarg;
+                break;
+
             case 'R':
                 stepmode = RUN;
                 break;
@@ -270,7 +293,15 @@ struct options *parseopts(int argc, char **argv)
     if (initial_reg_file)
         opts->initial_regs = init_registers_from_file(initial_reg_file);
 
-    if (opts->scfile == NULL) {
+    if (memory_map_file) {
+        if (!initial_reg_file) {
+            printf("ERROR: need registers file!\n");
+            usage();
+            exit(1);
+        }
+        opts->mmap = init_memory_map(memory_map_file);
+        opts->scfile = NULL;
+    } else if (opts->scfile == NULL) {
         usage();
         exit(1);
     }
@@ -280,21 +311,33 @@ struct options *parseopts(int argc, char **argv)
 
 int main(int argc, char **argv)
 {
+    struct memory_map *m = NULL;
+
     parseopts(argc, argv);
 
-    rf = readfile(opts->scfile);
+    if (opts->mmap != NULL) {
+        m = opts->mmap;
+    } else {
+        opts->mmap = xmalloc(sizeof(struct memory_map));
+        opts->mmap->rf = readfile(opts->scfile);
+        opts->mmap->len = 3 * 1024 * 1024;
+        opts->mmap->baseaddr = opts->baseaddress; // TODO remove opts->baseaddress
+        opts->mmap->prot = UC_PROT_ALL;
+        m = opts->mmap;
+    }
+
     ncurses_init();
 
     while (true) {
         if (opts->arch == X86 && opts->mode == MODE_32) {
-            diss = disass(rf->bytes, rf->len, opts->baseaddress, CS_ARCH_X86, CS_MODE_32);
-            unicorn_x86(rf->bytes, rf->len, opts->baseaddress);
+            diss = disass(m->rf->bytes, m->rf->len, m->baseaddr, CS_ARCH_X86, CS_MODE_32);
+            unicorn_x86(m->rf->bytes, m->rf->len, m->baseaddr);
         } else if (opts->arch == X86 && opts->mode == MODE_64) {
-            diss = disass(rf->bytes, rf->len, opts->baseaddress, CS_ARCH_X86, CS_MODE_64);
-            unicorn_x64(rf->bytes, rf->len, opts->baseaddress);
+            diss = disass(m->rf->bytes, m->rf->len, m->baseaddr, CS_ARCH_X86, CS_MODE_64);
+            unicorn_x64(m->rf->bytes, m->rf->len, m->baseaddr);
         } else if (opts->arch == ARM && opts->mode == MODE_32) {
-            diss = disass(rf->bytes, rf->len, opts->baseaddress, CS_ARCH_ARM, CS_MODE_ARM);
-            unicorn_arm(rf->bytes, rf->len, opts->baseaddress);
+            diss = disass(m->rf->bytes, m->rf->len, m->baseaddr, CS_ARCH_ARM, CS_MODE_ARM);
+            unicorn_arm(m->rf->bytes, m->rf->len, m->baseaddr);
         } else {
             endwin();
             printf("not supported yet!\n");

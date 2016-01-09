@@ -166,3 +166,69 @@ void *init_registers_from_file(char *file)
     return r;
 }
 
+struct memory_map * init_memory_map(char *map_file)
+{
+    struct memory_map *mmap, *m;
+    struct readfile *rf;
+    char *line, *addr, *perm, *file, *basedir, *fqfile;
+    int n;
+    size_t max_path = 512;
+    struct stat fstat;
+
+    mmap = xmalloc(sizeof(struct memory_map));
+    memset(mmap, 0, sizeof(struct memory_map));
+    m = mmap;
+    rf = readfile(map_file);
+    basedir = dirname(map_file);
+    line = strtok((char*)rf->bytes, "\n");
+    do {
+        n = sscanf(line, "%m[0-9x] %ms %ms", &addr, &perm, &file);
+        if (n == 3) {
+            fqfile = xmalloc(strnlen(basedir, max_path/2) + strnlen(file, max_path/2)+1);
+            snprintf(fqfile, max_path, "%s/%s", basedir, file);
+
+            if (stat(fqfile, &fstat) == -1) {
+                printf("memory_file \"%s\": %s\n", file, strerror(errno));
+                exit(1);
+            }
+
+            if ((fstat.st_mode & S_IFMT) != S_IFREG) {
+                printf("memory_file \"%s\": need a regular file\n", file);
+                exit(1);
+            }
+
+            if (m->rf != NULL) {
+                m->next = xmalloc(sizeof(struct memory_map));
+                m = m->next;
+                memset(m, 0, sizeof(struct memory_map));
+            }
+
+            m->rf = readfile(fqfile);
+            m->len = MAX(0x100000, ((m->rf->len>>16)<<16)+4096);
+            m->baseaddr = strtoul(addr, NULL, 16);
+            if (perm[0] == 'r')
+                m->prot = UC_PROT_READ;
+            if (perm[1] == 'w')
+                m->prot = m->prot | UC_PROT_WRITE;
+            if (perm[2] == 'x')
+                m->prot = m->prot | UC_PROT_EXEC;
+
+        } else {
+            printf("Invalid format of the memory map file. It need to this format:\n");
+            printf("0x00500000 rwx  path_to_file1\n0x00600000 rw-  path_to_file2\n");
+            printf("<%s>\n", line);
+            exit(1);
+        }
+
+    } while((line = strtok(NULL, "\n")) != NULL);
+
+    xfree(rf);
+    xfree(line);
+    xfree(addr);
+    xfree(perm);
+    xfree(file);
+    xfree(fqfile);
+
+    return(mmap);
+}
+

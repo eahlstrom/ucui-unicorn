@@ -14,7 +14,7 @@ struct readfile * readfile(char *filename)
     }
 
     if (fstat(fileno(f), &sb) == -1) {
-        printf("fstat: %s\n", strerror(errno));
+        printf("readfile(%s): fstat: %s\n", filename, strerror(errno));
         exit(1);
     }
     rf->len = sb.st_size;
@@ -22,7 +22,7 @@ struct readfile * readfile(char *filename)
     rf->bytes = xmalloc(rf->len);
     memset(rf->bytes, 0, rf->len);
     if (fread(rf->bytes, rf->len, 1, f) == 0) {
-        printf("fread returned 0\n");
+        printf("readfile(%s): file empty\n", filename);
         exit(1);
     }
 
