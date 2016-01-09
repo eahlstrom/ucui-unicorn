@@ -114,18 +114,16 @@ void redisassemble_code(uc_engine *uc, uint64_t address, size_t len)
 void handle_keyboard(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
 {
     int ch;
+    struct memory_map *m;
 
     verify_visible_ip(address);
     while(true) {
         if (!ip_aligned_to_disassembly(address) && uc_running) {
-            uint32_t len;
             consw_info("IP not aligned to disassembly @ %08x.", address);
-            if (opts->baseaddress <= address && (opts->baseaddress+rf->len) >= address) {
+            if ((m = mmap_for_address(address)) != NULL) {
                 consw(" Re-disassembling at this address...\n");
-                len = rf->len - (address - opts->baseaddress);
-                consw_info("len: %u\n", len);
                 // hexdump(rf->bytes+(address-opts->baseaddress), len, address);
-                redisassemble_code(uc, address, len);
+                redisassemble_code(uc, address, m->rf->len);
                 spos = 0;
             } else {
                 consw(" Address is out-of-bounds.\n");
