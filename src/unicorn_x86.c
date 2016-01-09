@@ -117,28 +117,24 @@ void printstack_x86(uc_engine *uc) {
 }
 
 // callback for tracing instruction
-static void hook_code_x86(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+static void hook_code_x86(uc_engine *uc, uint64_t ip, uint32_t size, void *user_data)
 {
-    uint32_t r_eip;
-
-    uc_reg_read(uc, UC_X86_REG_EIP, &r_eip);
     printregs_x86(uc);
     printstack_x86(uc);
-
-    if (should_break(r_eip) == false) 
+    if (should_break(ip) == false)
         return;
-    handle_keyboard(uc, address);
+    handle_keyboard(uc, ip);
 }
 
 // callback for handling interrupt
 // ref: http://syscalls.kernelgrok.com/
 static void hook_intr_x86(uc_engine *uc, uint32_t intno, void *user_data)
 {
-    uint32_t r_eip;
 
     if (intno == 0x80 && opts->os == LINUX) {
         hook_intr_x86_linux(uc, intno, user_data);
     } else {
+        uint32_t r_eip;
         uc_reg_read(uc, UC_X86_REG_EIP, &r_eip);
         consw_info("%08x INT 0x%02x - ", r_eip, intno);
         switch(intno) {
