@@ -144,7 +144,7 @@ void printstack_x64(uc_engine *uc) {
 }
 
 // callback for tracing instruction
-static void hook_code_x64(uc_engine *uc, uint64_t address, uint64_t size, void *user_data)
+static void hook_code_x64(uc_engine *uc, uint64_t ip, uint64_t size, void *user_data)
 {
     uint64_t r_rip;
 
@@ -154,7 +154,7 @@ static void hook_code_x64(uc_engine *uc, uint64_t address, uint64_t size, void *
 
     if (should_break(r_rip) == false)
         return;
-    handle_keyboard(uc, address, size, user_data);
+    handle_keyboard(uc, ip);
 }
 
 // callback for handling interrupt

@@ -127,7 +127,7 @@ static void hook_code_x86(uc_engine *uc, uint64_t address, uint32_t size, void *
 
     if (should_break(r_eip) == false) 
         return;
-    handle_keyboard(uc, address, size, user_data);
+    handle_keyboard(uc, address);
 }
 
 // callback for handling interrupt
@@ -225,10 +225,13 @@ finish:
         xfree(r);
     uc_running = false;
     consw_info("Emulation done.\n");
+
     // Give the user a change to browse around in the asm window before restart
     r = read_x86_registers(uc);
     stepmode = STEP;
-    hook_code_x86(uc, r->eip, len, code);
+    printregs_x86(uc);
+    printstack_x86(uc);
+    handle_keyboard(uc, r->eip);
 
     uc_close(uc);
     xfree(prev_regs_x86);

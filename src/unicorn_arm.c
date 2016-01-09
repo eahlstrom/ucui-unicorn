@@ -127,7 +127,7 @@ void printstack_arm(uc_engine *uc) {
 }
 
 // callback for tracing instruction
-static void hook_code_arm(uc_engine *uc, uint64_t address, uint64_t size, void *user_data)
+static void hook_code_arm(uc_engine *uc, uint64_t ip, uint64_t size, void *user_data)
 {
     uint32_t r_pc;
 
@@ -137,7 +137,7 @@ static void hook_code_arm(uc_engine *uc, uint64_t address, uint64_t size, void *
 
     if (should_break(r_pc) == false)
         return;
-    handle_keyboard(uc, address, size, user_data);
+    handle_keyboard(uc, ip);
 }
 
 // callback for handling interrupt

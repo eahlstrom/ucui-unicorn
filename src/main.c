@@ -89,41 +89,40 @@ bool should_break(uint64_t ip)
     return(false);
 }
 
-void redisassemble_code(uc_engine *uc, uint64_t address, size_t len)
+void redisassemble_code(uc_engine *uc, uint64_t ip, size_t len)
 {
     uint8_t *new_code;
     uc_err err;
 
     new_code = xmalloc(len);
-    err = uc_mem_read(uc, address, new_code, len);
+    err = uc_mem_read(uc, ip, new_code, len);
     if (err == UC_ERR_OK) {
         xfree(diss);
         if (opts->arch == X86 && opts->mode == MODE_32) {
-            diss = disass(new_code, len, address, CS_ARCH_X86, CS_MODE_32);
+            diss = disass(new_code, len, ip, CS_ARCH_X86, CS_MODE_32);
         } else if (opts->arch == X86 && opts->mode == MODE_64) {
-            diss = disass(new_code, len, address, CS_ARCH_X86, CS_MODE_64);
+            diss = disass(new_code, len, ip, CS_ARCH_X86, CS_MODE_64);
         } else if (opts->arch == ARM && opts->mode == MODE_32) {
-            diss = disass(new_code, len, address, CS_ARCH_ARM, CS_MODE_ARM);
+            diss = disass(new_code, len, ip, CS_ARCH_ARM, CS_MODE_ARM);
         }
     } else {
-        consw_err("uc_mem_read %u bytes @ 0x%08llx. error %u: %s\n", len, address, err, uc_strerror(err));
+        consw_err("uc_mem_read %u bytes @ 0x%08llx. error %u: %s\n", len, ip, err, uc_strerror(err));
     }
     xfree(new_code);
 }
 
-void handle_keyboard(uc_engine *uc, uint64_t address, uint32_t size, void *user_data)
+void handle_keyboard(uc_engine *uc, uint64_t ip)
 {
     int ch;
     struct memory_map *m;
 
-    verify_visible_ip(address);
+    verify_visible_ip(ip);
     while(true) {
-        if (!ip_aligned_to_disassembly(address) && uc_running) {
-            consw_info("IP not aligned to disassembly @ %08x.", address);
-            if ((m = mmap_for_address(address)) != NULL) {
+        if (!ip_aligned_to_disassembly(ip) && uc_running) {
+            consw_info("IP not aligned to disassembly @ %08x.", ip);
+            if ((m = mmap_for_address(ip)) != NULL) {
                 consw(" Re-disassembling at this address...\n");
-                // hexdump(rf->bytes+(address-opts->baseaddress), len, address);
-                redisassemble_code(uc, address, m->rf->len);
+                redisassemble_code(uc, ip, m->rf->len);
                 spos = 0;
             } else {
                 consw(" Address is out-of-bounds.\n");
@@ -131,7 +130,7 @@ void handle_keyboard(uc_engine *uc, uint64_t address, uint32_t size, void *user_
                 return;
             }
         }
-        printwass(spos, (asswl.nlines-2), address);
+        printwass(spos, (asswl.nlines-2), ip);
         ch = getch();
         switch(ch) {
             case KEY_DOWN:
@@ -143,9 +142,14 @@ void handle_keyboard(uc_engine *uc, uint64_t address, uint32_t size, void *user_
                     spos--;
                 break;
             case 'D':
-                consw_info("Re-disassembling code...\n");
-                redisassemble_code(uc, opts->baseaddress, rf->len);
-                verify_visible_ip(address);
+                consw_info("Re-disassembling code... ");
+                if ((m = mmap_for_address(ip)) != NULL) {
+                    consw("\n");
+                    redisassemble_code(uc, m->baseaddr, m->rf->len);
+                    verify_visible_ip(ip);
+                } else {
+                    consw("failed to find memory map for ip 0x%08x\n", ip);
+                }
                 break;
             case 'M':
                 print_memory_map(opts->mmap);
