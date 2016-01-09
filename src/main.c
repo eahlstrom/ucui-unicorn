@@ -187,10 +187,11 @@ void usage(void)
     printf(" -R                       Start in RUN(<F9>) mode\n");
     printf("\n");
     printf("UI navigation:\n");
+    printf("  <Up> / <Down>           Scroll disassembly window.\n");
     printf("  <F9>                    Run to next breakpoint or until end.\n");
     printf("  <F7> or <Enter>         Single step.\n");
     printf("  D                       Re-disassemble code.\n");
-    printf("  <Up> / <Down>           Scroll disassembly window.\n");
+    printf("  M                       Print memory map.\n");
     printf("\n");
     printf("\nExamples:\n");
     printf("  $ %s ./sample_x86.shellcode\n", BINNAME);

@@ -95,7 +95,8 @@ static void parse_arm_register(char *line, struct arm_regs *wr)
     n = sscanf(line, "%m[^':']:%ms", &reg, &val);
     if (n == 2) {
         errno = 0;
-        if (strcmp(reg, "r1") == 0) { wr->r1 = strtoul(val, NULL, 0); }
+        if (strcmp(reg, "r0") == 0) { wr->r0 = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "r1") == 0) { wr->r1 = strtoul(val, NULL, 0); }
         else if (strcmp(reg, "r2") == 0) { wr->r2 = strtoul(val, NULL, 0); }
         else if (strcmp(reg, "r3") == 0) { wr->r3 = strtoul(val, NULL, 0); }
         else if (strcmp(reg, "r4") == 0) { wr->r4 = strtoul(val, NULL, 0); }

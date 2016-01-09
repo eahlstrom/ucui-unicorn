@@ -146,13 +146,9 @@ void printstack_x64(uc_engine *uc) {
 // callback for tracing instruction
 static void hook_code_x64(uc_engine *uc, uint64_t ip, uint64_t size, void *user_data)
 {
-    uint64_t r_rip;
-
-    uc_reg_read(uc, UC_X86_REG_RIP, &r_rip);
     printregs_x64(uc);
     printstack_x64(uc);
-
-    if (should_break(r_rip) == false)
+    if (should_break(ip) == false)
         return;
     handle_keyboard(uc, ip);
 }
@@ -161,11 +157,10 @@ static void hook_code_x64(uc_engine *uc, uint64_t ip, uint64_t size, void *user_
 // ref: http://syscalls.kernelgrok.com/
 static void hook_intr_x64(uc_engine *uc, uint32_t intno, void *user_data)
 {
-    uint64_t r_rip;
-
     if (opts->os == LINUX) {
         hook_intr_x64_linux(uc, intno, user_data);
     } else {
+        uint64_t r_rip;
         uc_reg_read(uc, UC_X86_REG_RIP, &r_rip);
         consw_info("%08x syscall: no os handler defined for syscall descrambling\n", r_rip);
     }
@@ -178,28 +173,50 @@ int unicorn_x64(uint8_t *code, unsigned int len, uint64_t baseaddress)
     uc_err err;
     uc_hook trace1, trace2;
     struct x64_regs *r;
+    bool regs_from_file = false;
 
-    int r_rsp = baseaddress + 0x200000;  // ESP register
+    if (opts->initial_regs) {
+        regs_from_file = true;
+        r = opts->initial_regs;
+        if (r->rip == 0)
+            r->rip = baseaddress;
+        if (r->rsp == 0)
+            r->rsp = baseaddress + 0x200000;
+    } else {
+        r = xmalloc(sizeof(struct x64_regs));
+        memset(r, 0, sizeof(struct x64_regs));
+        r->rsp = baseaddress + 0x200000;
+        r->rip = baseaddress;
+    }
 
-    wprintw(consw, "Emulate x86 64bits code\n"); wrefresh(consw);
+    consw("Emulate x86 64bits code\n");
 
     err = uc_open(UC_ARCH_X86, UC_MODE_64, &uc);
     if (err) {
-        wprintw(consw, "Failed on uc_open() with error returned: %u\n", err); wrefresh(consw);
-        return(1);
+        consw_err("uc_open() error %u: %s\n", err, uc_strerror(err));
+        goto error; 
     }
 
-    // map 4MB memory for this emulation
-    uc_mem_map(uc, baseaddress, 4 * 1024 * 1024, UC_PROT_ALL);
-
-    // write machine code to be emulated to memory
-    if (uc_mem_write(uc, baseaddress, code, len)) {
-        wprintw(consw, "Failed to write emulation code to memory, quit!\n"); wrefresh(consw);
-        return(1);
-    }
+    map_and_write_memory(uc, opts->mmap);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_X86_REG_RSP, &r_rsp);
+    if (r->rax != 0) { uc_reg_write(uc, UC_X86_REG_RAX, &r->rax); }
+    if (r->rbx != 0) { uc_reg_write(uc, UC_X86_REG_RBX, &r->rbx); }
+    if (r->rcx != 0) { uc_reg_write(uc, UC_X86_REG_RCX, &r->rcx); }
+    if (r->rdx != 0) { uc_reg_write(uc, UC_X86_REG_RDX, &r->rdx); }
+    if (r->rsi != 0) { uc_reg_write(uc, UC_X86_REG_RSI, &r->rsi); }
+    if (r->rdi != 0) { uc_reg_write(uc, UC_X86_REG_RDI, &r->rdi); }
+    if (r->rbp != 0) { uc_reg_write(uc, UC_X86_REG_RBP, &r->rbp); }
+    if (r->rsp != 0) { uc_reg_write(uc, UC_X86_REG_RSP, &r->rsp); }
+    if (r->r8  != 0) { uc_reg_write(uc, UC_X86_REG_R8,  &r->r8);  }
+    if (r->r9  != 0) { uc_reg_write(uc, UC_X86_REG_R9,  &r->r9);  }
+    if (r->r10 != 0) { uc_reg_write(uc, UC_X86_REG_R10, &r->r10); }
+    if (r->r11 != 0) { uc_reg_write(uc, UC_X86_REG_R11, &r->r11); }
+    if (r->r12 != 0) { uc_reg_write(uc, UC_X86_REG_R12, &r->r12); }
+    if (r->r13 != 0) { uc_reg_write(uc, UC_X86_REG_R13, &r->r13); }
+    if (r->r14 != 0) { uc_reg_write(uc, UC_X86_REG_R14, &r->r14); }
+    if (r->r15 != 0) { uc_reg_write(uc, UC_X86_REG_R15, &r->r15); }
+    if (r->eflags != 0) { uc_reg_write(uc, UC_X86_REG_EFLAGS, &r->eflags); }
 
     // tracing all instructions by having @begin > @end
     uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_x64, NULL, 1, 0);
@@ -207,24 +224,36 @@ int unicorn_x64(uint8_t *code, unsigned int len, uint64_t baseaddress)
     // handle interrupt ourself
     uc_hook_add(uc, &trace2, UC_HOOK_INSN, hook_intr_x64, NULL, UC_X86_INS_SYSENTER);
 
-    wprintw(consw, "\n>>> Start tracing this Linux code\n"); wrefresh(consw);
+    uc_running = true;
     // emulate machine code in infinite time
-    // err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_SELF), 0, 12); <--- emulate only 12 instructions
-    err = uc_emu_start(uc, baseaddress, baseaddress + len, 0, 0);
+    err = uc_emu_start(uc, r->rip, baseaddress + len, 0, 0);
     if (err) {
-        wprintw(consw, "Failed on uc_emu_start() with error returned %u: %s\n", err, uc_strerror(err)); 
-        wrefresh(consw);
+        consw_err("Failed on uc_emu_start() with error returned %u: %s\n", err, uc_strerror(err)); 
+        goto finish;
     }
 
-    wprintw(consw, "\n>>> Emulation done.\n"); wrefresh(consw);
 
+finish:
+    if (!regs_from_file)
+        xfree(r);
+    uc_running = false;
+    consw_info("Emulation done.\n");
+    
     // Give the user a change to browse around in the asm window before restart
     r = read_x64_registers(uc);
     stepmode = STEP;
-    hook_code_x64(uc, r->rip, len, code);
+    printregs_x64(uc);
+    printstack_x64(uc);
+    handle_keyboard(uc, r->rip);
 
     uc_close(uc);
     xfree(prev_regs_x64);
+    xfree(r);
 
     return(0);
+
+error:
+    getch();
+    endwin();
+    exit(1);
 }

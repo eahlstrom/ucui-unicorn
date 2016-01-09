@@ -129,13 +129,9 @@ void printstack_arm(uc_engine *uc) {
 // callback for tracing instruction
 static void hook_code_arm(uc_engine *uc, uint64_t ip, uint64_t size, void *user_data)
 {
-    uint32_t r_pc;
-
-    uc_reg_read(uc, UC_ARM_REG_PC, &r_pc);
     printregs_arm(uc);
     printstack_arm(uc);
-
-    if (should_break(r_pc) == false)
+    if (should_break(ip) == false)
         return;
     handle_keyboard(uc, ip);
 }
@@ -144,13 +140,12 @@ static void hook_code_arm(uc_engine *uc, uint64_t ip, uint64_t size, void *user_
 // ref: http://syscalls.kernelgrok.com/
 static void hook_intr_arm(uc_engine *uc, uint32_t intno, void *user_data)
 {
-    uint32_t r_pc;
-
     if (opts->os == LINUX) {
         hook_intr_arm_linux(uc, intno, user_data);
     } else {
+        uint32_t r_pc;
         uc_reg_read(uc, UC_ARM_REG_PC, &r_pc);
-        consw_info("%08x syscall: no os handler defined for syscall descrambling\n", r_pc, intno);
+        consw_info("%08x syscall: %d no os handler defined for syscall descrambling\n", r_pc, intno);
     }
 }
 
@@ -161,28 +156,51 @@ int unicorn_arm(uint8_t *code, unsigned int len, uint64_t baseaddress)
     uc_err err;
     uc_hook trace1, trace2;
     struct arm_regs *r;
+    bool regs_from_file = false;
 
-    uint32_t r_sp = baseaddress + 0x200000;  // ESP register
+    if (opts->initial_regs) {
+        regs_from_file = true;
+        r = opts->initial_regs;
+        if (r->pc == 0)
+            r->pc = baseaddress;
+        if (r->sp == 0)
+            r->sp = baseaddress + 0x200000;
+    } else {
+        r = xmalloc(sizeof(struct arm_regs));
+        memset(r, 0, sizeof(struct arm_regs));
+        r->sp = baseaddress + 0x200000;
+        r->pc = baseaddress;
+    }
 
     consw_info("Emulate ARM 32bits code\n");
 
+    // Initialize emulator
     err = uc_open(UC_ARCH_ARM, UC_MODE_ARM, &uc);
     if (err) {
-        consw_err("Failed on uc_open() with error returned: %u\n", err);
-        return(1);
+        consw_err("uc_open() error %u: %s\n", err, uc_strerror(err));
+        goto error;
     }
 
-    // map 4MB memory for this emulation
-    uc_mem_map(uc, baseaddress, 4 * 1024 * 1024, UC_PROT_ALL);
-
-    // write machine code to be emulated to memory
-    if (uc_mem_write(uc, baseaddress, code, len)) {
-        consw_err("Failed to write emulation code to memory, quit!\n");
-        return(1);
-    }
+    map_and_write_memory(uc, opts->mmap);
 
     // initialize machine registers
-    uc_reg_write(uc, UC_ARM_REG_SP, &r_sp);
+    if (r->r0 != 0) { uc_reg_write(uc, UC_ARM_REG_R0, &r->r0); }
+    if (r->r1 != 0) { uc_reg_write(uc, UC_ARM_REG_R1, &r->r1); }
+    if (r->r2 != 0) { uc_reg_write(uc, UC_ARM_REG_R2, &r->r2); }
+    if (r->r3 != 0) { uc_reg_write(uc, UC_ARM_REG_R3, &r->r3); }
+    if (r->r4 != 0) { uc_reg_write(uc, UC_ARM_REG_R4, &r->r4); }
+    if (r->r5 != 0) { uc_reg_write(uc, UC_ARM_REG_R5, &r->r5); }
+    if (r->r6 != 0) { uc_reg_write(uc, UC_ARM_REG_R6, &r->r6); }
+    if (r->r7 != 0) { uc_reg_write(uc, UC_ARM_REG_R7, &r->r7); }
+    if (r->r8 != 0) { uc_reg_write(uc, UC_ARM_REG_R8, &r->r8); }
+    if (r->sb != 0) { uc_reg_write(uc, UC_ARM_REG_SB, &r->sb); }
+    if (r->sl != 0) { uc_reg_write(uc, UC_ARM_REG_SL, &r->sl); }
+    if (r->fp != 0) { uc_reg_write(uc, UC_ARM_REG_FP, &r->fp); }
+    if (r->ip != 0) { uc_reg_write(uc, UC_ARM_REG_IP, &r->ip); }
+    if (r->sp != 0) { uc_reg_write(uc, UC_ARM_REG_SP, &r->sp); }
+    if (r->lr != 0) { uc_reg_write(uc, UC_ARM_REG_LR, &r->lr); }
+    if (r->pc != 0) { uc_reg_write(uc, UC_ARM_REG_PC, &r->pc); }
+
 
     // tracing all instructions by having @begin > @end
     uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_arm, NULL, 1, 0);
@@ -190,24 +208,34 @@ int unicorn_arm(uint8_t *code, unsigned int len, uint64_t baseaddress)
     // handle interrupt ourself
     uc_hook_add(uc, &trace2, UC_HOOK_INTR, hook_intr_arm, NULL);
 
-    consw_info("Start tracing this Linux code @ 0x%08x\n", baseaddress);
     // emulate machine code in infinite time
-    // err = uc_emu_start(uc, ADDRESS, ADDRESS + sizeof(X86_CODE32_SELF), 0, 12); <--- emulate only 12 instructions
-    err = uc_emu_start(uc, baseaddress, baseaddress + len, 0, 0);
+    err = uc_emu_start(uc, r->pc, baseaddress + len, 0, 0);
     if (err) {
-        wprintw(consw, "Failed on uc_emu_start() with error returned %u: %s\n", err, uc_strerror(err)); 
-        wrefresh(consw);
+        consw_err("uc_emu_start() error %u: %s\n", err, uc_strerror(err));
+        goto finish;
     }
 
+finish:
+    if (!regs_from_file)
+        xfree(r);
+    uc_running = false;
     consw_info("Emulation done.\n");
 
     // Give the user a change to browse around in the asm window before restart
     r = read_arm_registers(uc);
     stepmode = STEP;
-    hook_code_arm(uc, r->pc, len, code);
+    printregs_arm(uc);
+    printstack_arm(uc);
+    handle_keyboard(uc, r->pc);
 
     uc_close(uc);
     xfree(prev_regs_arm);
+    xfree(r);
 
     return(0);
+
+error:
+    getch();
+    endwin();
+    exit(1);
 }

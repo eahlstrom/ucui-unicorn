@@ -157,8 +157,12 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
     bool regs_from_file = false;
 
     if (opts->initial_regs) {
-        r = opts->initial_regs;
         regs_from_file = true;
+        r = opts->initial_regs;
+        if (r->eip == 0)
+            r->eip = baseaddress;
+        if (r->esp == 0)
+            r->esp = baseaddress + 0x200000;
     } else {
         r = xmalloc(sizeof(struct x86_regs));
         memset(r, 0, sizeof(struct x86_regs));
