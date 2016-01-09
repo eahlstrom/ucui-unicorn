@@ -1,2 +1,2 @@
 0x300000 rwx  write_exit.mem
-0x500000 rw-  stack.mem
+0x500000 rwx  stack.mem
