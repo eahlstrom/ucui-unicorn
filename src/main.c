@@ -157,7 +157,7 @@ void handle_keyboard(uc_engine *uc, uint64_t ip)
             case KEY_F(7):
             case KEY_F(8):
             case KEY_ENTER:
-            case 10:
+            case '\n':
                 stepmode = STEP;
                 return;
             case KEY_F(9):
@@ -316,6 +316,7 @@ int main(int argc, char **argv)
 {
     struct memory_map *m = NULL;
 
+    diss = NULL;
     parseopts(argc, argv);
 
     if (opts->mmap != NULL) {
@@ -332,6 +333,7 @@ int main(int argc, char **argv)
     ncurses_init();
 
     while (true) {
+        xfree(diss);
         if (opts->arch == X86 && opts->mode == MODE_32) {
             diss = disass(m->rf->bytes, m->rf->len, m->baseaddr, CS_ARCH_X86, CS_MODE_32);
             unicorn_x86(m->rf->bytes, m->rf->len, m->baseaddr);

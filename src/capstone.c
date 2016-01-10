@@ -3,7 +3,7 @@
 struct disassembly * disass(uint8_t *code, unsigned int len, uint64_t baseaddr, cs_arch arch, cs_mode mode)
 {
     csh handle = 0;
-    struct disassembly *diss = NULL;
+    struct disassembly *d = NULL;
     cs_err err;
 
     if ((err = cs_open(arch, mode, &handle)) != CS_ERR_OK) {
@@ -13,14 +13,14 @@ struct disassembly * disass(uint8_t *code, unsigned int len, uint64_t baseaddr, 
         exit(1);
     }
 
-    diss = malloc(sizeof(struct disassembly));
-    diss->count = cs_disasm(handle, code, len, baseaddr, 0, &diss->insn);
-    if (diss->count == 0) {
+    d = malloc(sizeof(struct disassembly));
+    d->count = cs_disasm(handle, code, len, baseaddr, 0, &d->insn);
+    if (d->count == 0) {
         consw_err("Unable to disassemble code @ 0x%08llx\n", baseaddr);
     }
 
     cs_close(&handle);
-    return diss;
+    return(d);
 }
 
 void verify_visible_ip(uint32_t ip)
