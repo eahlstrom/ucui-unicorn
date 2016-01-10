@@ -66,8 +66,6 @@ void printwass(unsigned int startpos, unsigned int lines, uint64_t ip)
 
     // instruction pointer highlight
     init_pair(1, COLOR_BLACK, COLOR_WHITE);
-    consw("diss->count: %u, startpos: 0x%x (%u) endpos: 0x%x (%u)\n", diss->count, startpos, startpos, endpos, endpos);
-    return;
 
     for (i=startpos, wline=1; i <= endpos; i++, wline++) {
         if (ip==diss->insn[i].address)
