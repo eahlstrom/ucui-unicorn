@@ -1,0 +1,5 @@
+rsp: 0x5000000
+rax: 1          # SYS_WRITE
+rdi: 1          # STDOUT
+rdx: 16         # length
+rsi: 0x5000000  # addr of string

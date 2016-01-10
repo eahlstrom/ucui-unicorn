@@ -1,0 +1,2 @@
+0x4000000 rwx code.mem
+0x5000000 rw- stack.mem

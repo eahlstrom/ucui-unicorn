@@ -1,0 +1,5 @@
+sp: 0x5000000
+r7: 4          # SYS_WRITE
+r0: 1          # STDOUT
+r1: 0x5000000  # addr of string
+r2: 16         # length
