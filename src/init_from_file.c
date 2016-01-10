@@ -217,7 +217,6 @@ struct memory_map * init_memory_map(char *map_file)
         } else {
             printf("Invalid format of the memory map file. It need to this format:\n");
             printf("0x00500000 rwx  path_to_file1\n0x00600000 rw-  path_to_file2\n");
-            printf("<%s>\n", line);
             exit(1);
         }
 
