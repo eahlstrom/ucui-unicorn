@@ -23,6 +23,7 @@
 #include "syscall.h"
 #include "init.h"
 #include "memory_map.h"
+#include "commands.h"
 
 #define MIN(a, b) (a < b? a : b)
 #define MAX(a, b) (a > b? a : b)
@@ -131,8 +132,8 @@ bool should_break(uint64_t pc);
 void *xmalloc(size_t size);
 void wpprintw(WINDOW *w, unsigned char *str, uint32_t size);
 void handle_keyboard(uc_engine *uc, uint64_t pc);
-struct win_layout asswl, regswl, conswl, stackwl;
-WINDOW *assw, *regsw, *consw, *stackw;
+struct win_layout asswl, regswl, conswl, stackwl, cmdwl;
+WINDOW *assw, *regsw, *consw, *stackw, *cmdw;
 struct disassembly *diss;
 struct readfile *rf;
 unsigned int spos;

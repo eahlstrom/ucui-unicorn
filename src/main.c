@@ -22,7 +22,7 @@ void ncurses_init(void)
     keypad(stdscr, true);
     curs_set(0);
 
-    asswl.nlines = LINES / 3;
+    asswl.nlines = LINES / 4;
     asswl.ncols = COLS-65;
     asswl.begin_y = 1;
     asswl.begin_x = 0;
@@ -37,10 +37,15 @@ void ncurses_init(void)
     stackwl.begin_y = asswl.begin_y + asswl.nlines ;
     stackwl.begin_x = regswl.begin_x;
 
-    conswl.nlines = LINES - asswl.nlines - 1;
-    conswl.ncols = COLS - stackwl.ncols;
+    conswl.nlines = LINES - asswl.nlines - 3;
+    conswl.ncols = COLS - stackwl.ncols - 1;
     conswl.begin_y = asswl.nlines + 1;
-    conswl.begin_x = 0;
+    conswl.begin_x = 1;
+
+    cmdwl.nlines = 1;
+    cmdwl.ncols = conswl.ncols - 1;
+    cmdwl.begin_y = conswl.begin_y + conswl.nlines + 1;
+    cmdwl.begin_x = 0;
 
     assw = newwin(asswl.nlines, asswl.ncols, asswl.begin_y, asswl.begin_x);
     box(assw, 0, 0);
@@ -48,7 +53,7 @@ void ncurses_init(void)
     regsw = newwin(regswl.nlines, regswl.ncols, regswl.begin_y, regswl.begin_x);
     box(regsw, 0, 0);
 
-    consw = newwin(conswl.nlines, conswl.ncols, conswl.begin_y, asswl.begin_x);
+    consw = newwin(conswl.nlines, conswl.ncols, conswl.begin_y, conswl.begin_x);
     // box(consw, 0, 0);
     scrollok(consw, true);
     wsetscrreg(consw, 0, conswl.nlines);
@@ -56,15 +61,20 @@ void ncurses_init(void)
     stackw = newwin(stackwl.nlines, stackwl.ncols, stackwl.begin_y, stackwl.begin_x);
     box(stackw, 0, 0);
 
+    cmdw = newwin(cmdwl.nlines, cmdwl.ncols, cmdwl.begin_y, cmdwl.begin_x);
+    // box(cmdw, 0, 0);
+
     mvwprintw(assw, 0, 2, " Disassembly ");
     mvwprintw(regsw, 0, 2, " Registers ");
     mvwprintw(stackw, 0, 2, " Stack ");
+    mvwprintw(cmdw, 0, 0, "cmd$ ", 0);
 
     refresh();
     wrefresh(assw);
     wrefresh(regsw);
     wrefresh(consw);
     wrefresh(stackw);
+    wrefresh(cmdw);
     spos = 0;
 }
 
@@ -115,6 +125,7 @@ void handle_keyboard(uc_engine *uc, uint64_t ip)
 {
     int ch;
     struct memory_map *m;
+    char buf[255];
 
     verify_visible_ip(ip);
     while(true) {
@@ -132,6 +143,8 @@ void handle_keyboard(uc_engine *uc, uint64_t ip)
         }
         printwass(spos, (asswl.nlines-2), ip);
         ch = getch();
+        // mvwprintw(stdscr, 0, 15, "key: 0%o(%d) <%c>  spos: %d, %d diss->count: %d  ", ch, ch, ch, spos, spos+(asswl.nlines-3), diss->count);
+        // wrefresh(stdscr);
         switch(ch) {
             case KEY_DOWN:
                 if ((spos+(asswl.nlines-2)) < diss->count)
@@ -154,20 +167,32 @@ void handle_keyboard(uc_engine *uc, uint64_t ip)
             case 'M':
                 print_memory_map(opts->mmap);
                 break;
+            case 12: // <CTRL>-l
+                wclear(consw);
+                wrefresh(consw);
+                break;
+            case 21: // <CTRL>-u
+                wmove(cmdw, 0, 5);
+                wclrtobot(cmdw);
+                wrefresh(cmdw);
+                break;
             case KEY_F(7):
-            case KEY_F(8):
-            case KEY_ENTER:
-            case '\n':
                 stepmode = STEP;
                 return;
             case KEY_F(9):
                 stepmode = RUN;
                 return;
+            case '\n':
+                memset(buf, 0, sizeof(buf));
+                mvwinnstr(cmdw, 0, 5, buf, sizeof(buf)-1);
+                runcmd(buf);
+                wclrtobot(cmdw);
+                wrefresh(cmdw);
+                break;
             default:
-                wprintw(stdscr, "              ");
+                wprintw(cmdw, "%c", ch);
+                wrefresh(cmdw);
         }
-        // mvwprintw(stdscr, 0, 15, "key: 0%o(%d)  spos: %d, %d diss->count: %d  ", ch, ch, spos, spos+(asswl.nlines-3), diss->count);
-        // wrefresh(stdscr);
     }
 }
 
