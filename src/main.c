@@ -17,10 +17,10 @@ void ncurses_init(void)
         exit(1);
     }
     start_color();
-    cbreak();
-    noecho();
-    keypad(stdscr, true);
-    curs_set(0);
+    // cbreak();
+    // noecho();
+    // keypad(stdscr, true);
+    curs_set(1);
 
     asswl.nlines = LINES / 4;
     asswl.ncols = COLS-65;
@@ -123,9 +123,10 @@ void redisassemble_code(uc_engine *uc, uint64_t ip, size_t len)
 
 void handle_keyboard(uc_engine *uc, uint64_t ip)
 {
-    int ch;
+    // int ch;
     struct memory_map *m;
-    char buf[255];
+    char cmd[MAX_CMD];
+    enum command_state cmd_state;
 
     verify_visible_ip(ip);
     while(true) {
@@ -142,6 +143,22 @@ void handle_keyboard(uc_engine *uc, uint64_t ip)
             }
         }
         printwass(spos, (asswl.nlines-2), ip);
+
+        memset(cmd, 0, sizeof(cmd));
+        mvwgetnstr(cmdw, 0, 5, cmd, sizeof(cmd)-1);
+        cmd_state = runcmd(uc, ip, cmd);
+        wmove(cmdw, 0, 5);
+        wclrtobot(cmdw);
+        wrefresh(cmdw);
+        switch(cmd_state) {
+            case DONE_PROCESSING:
+                return;
+            case MORE_COMMANDS:
+                break;
+        }
+
+
+        /*
         ch = getch();
         // mvwprintw(stdscr, 0, 15, "key: 0%o(%d) <%c>  spos: %d, %d diss->count: %d  ", ch, ch, ch, spos, spos+(asswl.nlines-3), diss->count);
         // wrefresh(stdscr);
@@ -193,6 +210,8 @@ void handle_keyboard(uc_engine *uc, uint64_t ip)
                 wprintw(cmdw, "%c", ch);
                 wrefresh(cmdw);
         }
+    */
+    
     }
 }
 
@@ -341,6 +360,7 @@ int main(int argc, char **argv)
 {
     struct memory_map *m = NULL;
 
+    last_command = NULL;
     diss = NULL;
     parseopts(argc, argv);
 
