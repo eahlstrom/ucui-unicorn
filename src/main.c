@@ -369,7 +369,7 @@ int main(int argc, char **argv)
     } else {
         opts->mmap = xmalloc(sizeof(struct memory_map));
         opts->mmap->rf = readfile(opts->scfile);
-        opts->mmap->len = 3 * 1024 * 1024;
+        opts->mmap->len = MAX(opts->mmap->rf->len, 3 * 1024 * 1024);
         opts->mmap->baseaddr = opts->baseaddress; // TODO remove opts->baseaddress
         opts->mmap->prot = UC_PROT_ALL;
         m = opts->mmap;

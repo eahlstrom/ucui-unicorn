@@ -7,14 +7,21 @@ void map_and_write_memory(uc_engine *uc, struct memory_map *mmap)
     p = mmap;
 
     do {
-        // consw("map 0x%08x with len: 0x%x\n", p->baseaddr, p->len);
+        // consw("map 0x%08x with len: 0x%x (%d)\n", p->baseaddr, p->len, p->len);
+        err = 0;
         if ((err = uc_mem_map(uc, p->baseaddr, p->len, p->prot)) != UC_ERR_OK) {
             consw_err("uc_mem_map() error %u: %s\n", err, uc_strerror(err));
+            consw(" baseaddress: 0x%x\n", p->baseaddr);
+            consw(" map len:     0x%x (%u)\n", p->len, p->len);
+            consw(" code len:    0x%x (%u)\n", p->rf->len, p->rf->len);
             goto error;
         }
 
-        if (uc_mem_write(uc, p->baseaddr, p->rf->bytes, p->rf->len)) {
+        if ((err = uc_mem_write(uc, p->baseaddr, p->rf->bytes, p->rf->len)) != UC_ERR_OK) {
             consw_err("uc_mem_write() error %u: %s\n", err, uc_strerror(err));
+            consw(" baseaddress: 0x%x\n", p->baseaddr);
+            consw(" map len:     0x%x (%u)\n", p->len, p->len);
+            consw(" code len:    0x%x (%u)\n", p->rf->len, p->rf->len);
             goto error;
         }
     } while ((p = p->next) != NULL);

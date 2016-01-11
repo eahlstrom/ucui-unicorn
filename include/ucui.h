@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <fcntl.h>
 #include <inttypes.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -35,13 +36,14 @@
 
 
 struct readfile {
-	uint8_t *bytes;
-	size_t len;
+  char *filename;
+  uint8_t *bytes;
+  size_t len;
 };
 
 struct disassembly {
-	size_t count;
-	cs_insn *insn;
+  size_t count;
+  cs_insn *insn;
 };
 
 struct win_layout {
@@ -52,15 +54,15 @@ struct win_layout {
 };
 
 struct x86_regs {
-    uint32_t eax, ebx, ecx, edx, esi;
-    uint32_t edi, ebp, esp, eip, eflags;
-    uint16_t ss, cs, ds, es, fs, gs;
+  uint32_t eax, ebx, ecx, edx, esi;
+  uint32_t edi, ebp, esp, eip, eflags;
+  uint16_t ss, cs, ds, es, fs, gs;
 };
 
 struct x64_regs {
-    uint64_t rax, rbx, rcx, rdx, rsi;
-    uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
-    uint64_t rdi, rbp, rsp, rip, eflags;
+  uint64_t rax, rbx, rcx, rdx, rsi;
+  uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
+  uint64_t rdi, rbp, rsp, rip, eflags;
 };
 
 struct arm_regs {

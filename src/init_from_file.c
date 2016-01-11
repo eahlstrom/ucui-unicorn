@@ -173,6 +173,7 @@ struct memory_map * init_memory_map(char *map_file)
     struct readfile *rf;
     char *line, *addr, *perm, *file, *basedir, *fqfile;
     int n;
+    size_t round_4k;
     size_t max_path = 512;
     struct stat fstat;
 
@@ -183,13 +184,14 @@ struct memory_map * init_memory_map(char *map_file)
     basedir = dirname(map_file);
     line = strtok((char*)rf->bytes, "\n");
     do {
-        n = sscanf(line, "%m[0-9x] %ms %ms", &addr, &perm, &file);
+        n = sscanf(line, "%m[0-9a-fA-Fx] %ms %ms", &addr, &perm, &file);
         if (n == 3) {
             fqfile = xmalloc(strnlen(basedir, max_path/2) + strnlen(file, max_path/2)+1);
             snprintf(fqfile, max_path, "%s/%s", basedir, file);
 
             if (stat(fqfile, &fstat) == -1) {
                 printf("memory_file \"%s\": %s\n", file, strerror(errno));
+                printf("line: %s\n", line);
                 exit(1);
             }
 
@@ -205,8 +207,12 @@ struct memory_map * init_memory_map(char *map_file)
             }
 
             m->rf = readfile(fqfile);
-            m->len = MAX(0x100000, ((m->rf->len>>16)<<16)+4096);
             m->baseaddr = strtoul(addr, NULL, 16);
+            round_4k = ((m->rf->len>>12)<<12);
+            if (m->rf->len > round_4k)
+                round_4k += 4096;
+            m->len = round_4k;
+
             if (perm[0] == 'r')
                 m->prot = UC_PROT_READ;
             if (perm[1] == 'w')
