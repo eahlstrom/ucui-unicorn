@@ -26,8 +26,8 @@
 #include "memory_map.h"
 #include "commands.h"
 
-#define MIN(a, b) (a < b? a : b)
-#define MAX(a, b) (a > b? a : b)
+#define MIN(a,b) ({ typeof (a) _a = (a); typeof (b) _b = (b); _a < _b ? _a : _b; })
+#define MAX(a,b) ({ typeof (a) _a = (a); typeof (b) _b = (b); _a > _b ? _a : _b; })
 #define CHECK_BIT(var, pos) ((var) & (1<<(pos)))
 #define consw(M, ...) wprintw(consw, M, ##__VA_ARGS__); wrefresh(consw)
 #define consw_info(M, ...) consw(">> " M, ##__VA_ARGS__)

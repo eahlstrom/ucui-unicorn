@@ -19,8 +19,11 @@ unicorn_install:
 install:
 	cp build/ucui /usr/local/bin
 
+clean: uninstall FORCE
+	cd src; make clean
+
 uninstall:
-	rm /usr/local/bin/ucui
+	rm -f /usr/local/bin/ucui
 
 submodules:
 	git submodule init

@@ -211,7 +211,11 @@ int unicorn_arm(uint8_t *code, unsigned int len, uint64_t baseaddress)
     // emulate machine code in infinite time
     err = uc_emu_start(uc, r->pc, baseaddress + len, 0, 0);
     if (err) {
-        consw_err("uc_emu_start() error %u: %s\n", err, uc_strerror(err));
+        consw_err("");
+        if (prev_regs_x86 != NULL && prev_regs_arm->pc != 0) {
+            consw("0x%08x: ", prev_regs_arm->pc);
+        }
+        consw("uc_emu_start() error %u: %s\n", err, uc_strerror(err));
         goto finish;
     }
 

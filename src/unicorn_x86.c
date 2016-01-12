@@ -215,7 +215,11 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
     // uc_err uc_emu_start(uc_engine *uc, uint64_t begin, uint64_t until, uint64_t timeout, size_t count);
     err = uc_emu_start(uc, r->eip, baseaddress + len, 0, 0);
     if (err) {
-        consw_err("uc_emu_start() error %u: %s\n", err, uc_strerror(err));
+        consw_err("");
+        if (prev_regs_x86 != NULL && prev_regs_x86->eip != 0) {
+            consw("0x%08x: ", prev_regs_x86->eip);
+        }
+        consw("uc_emu_start() error %u: %s\n", err, uc_strerror(err));
         goto finish;
     }
 

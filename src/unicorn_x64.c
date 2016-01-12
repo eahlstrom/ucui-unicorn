@@ -228,7 +228,11 @@ int unicorn_x64(uint8_t *code, unsigned int len, uint64_t baseaddress)
     // emulate machine code in infinite time
     err = uc_emu_start(uc, r->rip, baseaddress + len, 0, 0);
     if (err) {
-        consw_err("Failed on uc_emu_start() with error returned %u: %s\n", err, uc_strerror(err)); 
+        consw_err("");
+        if (prev_regs_x64 != NULL && prev_regs_x64->rip != 0) {
+            consw("0x%08x: ", prev_regs_x64->rip);
+        }
+        consw("uc_emu_start() error %u: %s\n", err, uc_strerror(err));
         goto finish;
     }
 
