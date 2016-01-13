@@ -16,9 +16,13 @@ void ncurses_init(void)
         fprintf(stderr, "To small window! lines: %d, cols: %d. Need 50/140\n", LINES, COLS);
         exit(1);
     }
+    ucui_readline_init();
+
     start_color();
-    // cbreak();
-    // noecho();
+    cbreak();
+    noecho();
+    // nonl();
+    intrflush(NULL, false);
     // keypad(stdscr, true);
     curs_set(1);
 
@@ -67,7 +71,6 @@ void ncurses_init(void)
     mvwprintw(assw, 0, 2, " Disassembly ");
     mvwprintw(regsw, 0, 2, " Registers ");
     mvwprintw(stackw, 0, 2, " Stack ");
-    mvwprintw(cmdw, 0, 0, "cmd$ ", 0);
 
     refresh();
     wrefresh(assw);
@@ -123,95 +126,54 @@ void redisassemble_code(uc_engine *uc, uint64_t ip, size_t len)
 
 void handle_keyboard(uc_engine *uc, uint64_t ip)
 {
-    // int ch;
     struct memory_map *m;
-    char cmd[MAX_CMD];
+    int ch;
     enum command_state cmd_state;
 
     verify_visible_ip(ip);
+    if (!ip_aligned_to_disassembly(ip) && uc_running) {
+        consw_info("IP not aligned to disassembly @ %08x.", ip);
+        if ((m = mmap_for_address(ip)) != NULL) {
+            consw(" Re-disassembling at this address...\n");
+            redisassemble_code(uc, ip, m->rf->len);
+            spos = 0;
+        } else {
+            consw(" Address is out-of-bounds.\n");
+            uc_emu_stop(uc);
+            return;
+        }
+    }
+    printwass(spos, (asswl.nlines-2), ip);
+    mvwprintw(cmdw, 0, 0, RL_PROMPT, 0); wrefresh(cmdw);
+
+    curs_set(2);
     while(true) {
-        if (!ip_aligned_to_disassembly(ip) && uc_running) {
-            consw_info("IP not aligned to disassembly @ %08x.", ip);
-            if ((m = mmap_for_address(ip)) != NULL) {
-                consw(" Re-disassembling at this address...\n");
-                redisassemble_code(uc, ip, m->rf->len);
-                spos = 0;
-            } else {
-                consw(" Address is out-of-bounds.\n");
-                uc_emu_stop(uc);
-                return;
-            }
-        }
-        printwass(spos, (asswl.nlines-2), ip);
-
-        memset(cmd, 0, sizeof(cmd));
-        mvwgetnstr(cmdw, 0, 5, cmd, sizeof(cmd)-1);
-        cmd_state = runcmd(uc, ip, cmd);
-        wmove(cmdw, 0, 5);
-        wclrtobot(cmdw);
-        wrefresh(cmdw);
-        switch(cmd_state) {
-            case DONE_PROCESSING:
-                return;
-            case MORE_COMMANDS:
-                break;
-        }
-
-
-        /*
         ch = getch();
         // mvwprintw(stdscr, 0, 15, "key: 0%o(%d) <%c>  spos: %d, %d diss->count: %d  ", ch, ch, ch, spos, spos+(asswl.nlines-3), diss->count);
         // wrefresh(stdscr);
         switch(ch) {
-            case KEY_DOWN:
-                if ((spos+(asswl.nlines-2)) < diss->count)
-                    spos++;
-                break;
-            case KEY_UP:
-                if (spos > 0)
-                    spos--;
-                break;
-            case 'D':
-                consw_info("Re-disassembling code... ");
-                if ((m = mmap_for_address(ip)) != NULL) {
-                    consw("\n");
-                    redisassemble_code(uc, m->baseaddr, m->rf->len);
-                    verify_visible_ip(ip);
-                } else {
-                    consw("failed to find memory map for ip 0x%08x\n", ip);
-                }
-                break;
-            case 'M':
-                print_memory_map(opts->mmap);
-                break;
-            case 12: // <CTRL>-l
+            case '\f':
                 wclear(consw);
                 wrefresh(consw);
                 break;
-            case 21: // <CTRL>-u
-                wmove(cmdw, 0, 5);
-                wclrtobot(cmdw);
-                wrefresh(cmdw);
-                break;
-            case KEY_F(7):
-                stepmode = STEP;
-                return;
-            case KEY_F(9):
-                stepmode = RUN;
-                return;
-            case '\n':
-                memset(buf, 0, sizeof(buf));
-                mvwinnstr(cmdw, 0, 5, buf, sizeof(buf)-1);
-                runcmd(buf);
-                wclrtobot(cmdw);
-                wrefresh(cmdw);
-                break;
+
             default:
-                wprintw(cmdw, "%c", ch);
-                wrefresh(cmdw);
+                // consw("-> 0x%x\n", ch);
+                forward_to_readline(ch);
+                if (*readline_command != 0) {
+                    cmd_state = runcmd(uc, ip, readline_command);
+                    *readline_command = 0;
+                    wmove(cmdw, 0, strlen(RL_PROMPT)); wrefresh(cmdw);
+                    switch(cmd_state) {
+                        case DONE_PROCESSING:
+                            curs_set(0);
+                            return;
+                        case MORE_COMMANDS:
+                            break;
+                    }
+                }
         }
-    */
-    
+        wrefresh(cmdw);
     }
 }
 
@@ -228,15 +190,7 @@ void usage(void)
     printf(" -M FILE                  Load a memory map. (-r required).\n");
     printf("                          Overrides file and BASEADDRESS.\n");
     printf(" -b bp_addr[,bp_addr,..]  Set breakpoint(s).\n");
-    printf(" -R                       Start in RUN(<F9>) mode\n");
-    printf("\n");
-    printf("UI navigation:\n");
-    printf("  <Up> / <Down>           Scroll disassembly window.\n");
-    printf("  <F9>                    Run to next breakpoint or until end.\n");
-    printf("  <F7> or <Enter>         Single step.\n");
-    printf("  D                       Re-disassemble code.\n");
-    printf("  M                       Print memory map.\n");
-    printf("\n");
+    printf(" -R                       Start in RUN(c) mode\n");
     printf("\nExamples:\n");
     printf("  $ %s ./sample_x86.shellcode\n", BINNAME);
     printf("  $ %s -a ARM ./sample_arm.shellcode\n", BINNAME);
@@ -360,7 +314,6 @@ int main(int argc, char **argv)
 {
     struct memory_map *m = NULL;
 
-    last_command = NULL;
     diss = NULL;
     parseopts(argc, argv);
 

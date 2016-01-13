@@ -8,7 +8,6 @@ enum command_state {
   DONE_PROCESSING,
 };
 
-char *last_command;
 enum command_state runcmd(uc_engine *uc, uint64_t ip, char *command);
 
 #endif

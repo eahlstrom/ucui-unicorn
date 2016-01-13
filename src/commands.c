@@ -35,26 +35,13 @@ enum command_state runcmd(uc_engine *uc, uint64_t ip, char *command)
     char *arg0, *arg1, *arg2;
     int n;
 
-    if (last_command == NULL) {
-        last_command = xmalloc(MAX_CMD+1);
-    }
-
     chomp_strip(command);
     // consw("cmd: <%s> <%x> len: %d\n", command, command, strlen(command));
 
     n = sscanf(command, "%ms %ms %ms", &arg0, &arg1, &arg2);
     if (n == EOF) {
-        if (strlen(last_command) != 0) {
-            strncpy(command, last_command, MAX_CMD);
-            n = sscanf(command, "%ms %ms %ms", &arg0, &arg1, &arg2);
-            if (n == EOF)
-                return(MORE_COMMANDS);
-        } else {
-            cmd_usage();
-            return(MORE_COMMANDS);
-        }
-    } else {
-        strncpy(last_command, command, MAX_CMD);
+        cmd_usage();
+        return(MORE_COMMANDS);
     }
 
     if (strcmp(arg0, "help") == 0) {
@@ -78,6 +65,7 @@ enum command_state runcmd(uc_engine *uc, uint64_t ip, char *command)
             consw("\n");
             redisassemble_code(uc, m->baseaddr, m->rf->len);
             verify_visible_ip(ip);
+            printwass(spos, (asswl.nlines-2), ip);
         } else {
             consw("failed to find memory map for ip 0x%08x\n", ip);
         }
@@ -94,8 +82,37 @@ enum command_state runcmd(uc_engine *uc, uint64_t ip, char *command)
         addr = strtoul(arg1, NULL, 16);
         consw("hexdump! 0x%llx\n", addr);
 
+    } else if (strcmp(arg0, "pd") == 0) { // TODO
+        size_t assw_lines = asswl.nlines - 2;
+        size_t smax = diss->count - assw_lines;
+
+        if ((spos+assw_lines) < smax) {
+            spos += assw_lines;
+        } else {
+            spos = smax;
+        }
+        printwass(spos, (asswl.nlines-2), ip);
+
+    } else if (strcmp(arg0, "pu") == 0) { // TODO
+        if (spos > 0 && (spos-((asswl.nlines-2)) >= 0)) {
+            spos -= (asswl.nlines - 2);
+            consw("set spos to: %d\n", spos);
+            printwass(spos, (asswl.nlines-2), ip);
+        }
+
+    } else if (strcmp(arg0, "down") == 0) {
+        if ((spos+(asswl.nlines-2)) < diss->count)
+            spos++;
+        printwass(spos, (asswl.nlines-2), ip);
+
+    } else if (strcmp(arg0, "up") == 0) {
+        if (spos > 0)
+            spos--;
+        printwass(spos, (asswl.nlines-2), ip);
+
     } else {
         consw("%s: invalid command!\n", command);
+        cmd_usage();
     }
 
     return(MORE_COMMANDS);

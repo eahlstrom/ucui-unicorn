@@ -18,6 +18,8 @@
 #include <ncurses.h>
 #include <signal.h>
 #include <libgen.h>
+#include <readline/readline.h>
+#include <readline/history.h>
 #include <capstone/capstone.h>
 #include <unicorn/unicorn.h>
 
@@ -25,6 +27,7 @@
 #include "init.h"
 #include "memory_map.h"
 #include "commands.h"
+#include "ucui_readline.h"
 
 #define MIN(a,b) ({ typeof (a) _a = (a); typeof (b) _b = (b); _a < _b ? _a : _b; })
 #define MAX(a,b) ({ typeof (a) _a = (a); typeof (b) _b = (b); _a > _b ? _a : _b; })
