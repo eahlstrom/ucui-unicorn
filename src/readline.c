@@ -61,6 +61,7 @@ void command_entered(char *line) {
 
 int ucui_readline_init(void)
 {
+    cmds = init_commands();
     readline_command = xmalloc(MAX_CMD+1);
     
     using_history();

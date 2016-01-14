@@ -128,7 +128,7 @@ void handle_keyboard(uc_engine *uc, uint64_t ip)
 {
     struct memory_map *m;
     int ch;
-    enum command_state cmd_state;
+    command_state cmd_state;
 
     verify_visible_ip(ip);
     if (!ip_aligned_to_disassembly(ip) && uc_running) {
