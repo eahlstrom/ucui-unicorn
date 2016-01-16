@@ -21,8 +21,9 @@ static void cmd_usage(void)
     consw("Valid commands: (enter repeat's previous command)\n");
     c = cmds;
     do {
-        consw("  %-10s - %s\n", c->name, c->desc);
+        conswnf("  %-10s - %s\n", c->name, c->desc);
     } while ((c = c->next) != NULL);
+    consw("\n");
 }
 
 Command *last_command(Command *root)

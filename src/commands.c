@@ -140,7 +140,7 @@ Command *init_commands(void)
     add_command(root, create_command("M",     &cmd_pmmap,      "print memory map"));
     add_command(root, create_command("D",     &cmd_redisass,   "re-disassemble code"));
     add_command(root, create_command("list",  &cmd_list,       "change assembly window listing"));
-    add_command(root, create_command("hx",    &cmd_hx,         "hexdump address\n"));
+    add_command(root, create_command("hx",    &cmd_hx,         "hexdump address"));
 
     return(root);
 }
