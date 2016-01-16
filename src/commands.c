@@ -131,6 +131,23 @@ ret:
     return(MORE_COMMANDS);
 }
 
+static command_state cmd_follow(uc_engine *uc, uint64_t ip, char *args)
+{
+    uint64_t addr;
+    int n;
+
+    n = sscanf(args, "%llx", (long long unsigned int*)&addr);
+    if (n == 1) {
+        opts->follow = addr;
+        xfree(last_follow_bytes);
+        update_follow_window(uc, addr);
+    } else {
+        consw("Usage: follow address\n");
+    }
+
+    return(MORE_COMMANDS);
+}
+
 Command *init_commands(void)
 {
     Command *root;
@@ -141,6 +158,7 @@ Command *init_commands(void)
     add_command(root, create_command("D",     &cmd_redisass,   "re-disassemble code"));
     add_command(root, create_command("list",  &cmd_list,       "change assembly window listing"));
     add_command(root, create_command("hx",    &cmd_hx,         "hexdump address"));
+    add_command(root, create_command("follow",&cmd_follow,     "set follow address"));
 
     return(root);
 }

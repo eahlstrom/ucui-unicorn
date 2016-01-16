@@ -106,6 +106,7 @@ struct options {
   enum emulate_os os;
   void * initial_regs;
   struct memory_map *mmap;
+  uint64_t follow;
 };
 
 enum stepmodes {
@@ -139,12 +140,16 @@ void redisassemble_code(uc_engine *uc, uint64_t ip, size_t len);
 void *xmalloc(size_t size);
 void wpprintw(WINDOW *w, unsigned char *str, uint32_t size);
 void handle_keyboard(uc_engine *uc, uint64_t pc);
-struct win_layout asswl, regswl, conswl, stackwl, cmdwl;
-WINDOW *assw, *regsw, *consw, *stackw, *cmdw;
+struct win_layout asswl, regswl, conswl, stackwl, cmdwl, folwl;
+WINDOW *assw, *regsw, *consw, *stackw, *cmdw, *folw;
 struct disassembly *diss;
 struct readfile *rf;
 unsigned int spos;
 uint64_t *breakpoints;
 enum stepmodes stepmode;
+
+uint8_t *last_follow_bytes;
+void update_follow_window(uc_engine *uc, uint64_t addr);
+
 
 #endif

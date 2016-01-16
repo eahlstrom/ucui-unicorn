@@ -77,7 +77,7 @@ command_state runcmd(uc_engine *uc, uint64_t ip, char *line)
     if (s) {
         *s = 0; // terminate cmd string
         s++;    // advance to space
-        // skip strip spaces before arg(s)
+        // skip spaces before arg(s)
         for (i=0; (char)*s == 0x20 && i < MAX_CMD; i++) 
             s++;
         strncpy(arg, s, MAX_CMD);

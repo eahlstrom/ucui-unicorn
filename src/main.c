@@ -3,6 +3,14 @@
 void sigint(int signal)
 {
     endwin();
+    /*
+    fprintf(stderr, "lines: %d, cols: %d.\n", LINES, COLS);
+    fprintf(stderr, "asswl.nlines:   %d\n", asswl.nlines);
+    fprintf(stderr, "folwl.nlines:   %d\n", folwl.nlines);
+    fprintf(stderr, "conswl.nlines:  %d\n", conswl.nlines);
+    fprintf(stderr, "cmdwl.nlines:   %d\n", cmdwl.nlines);
+    fprintf(stderr, "sum:            %d\n", asswl.nlines + folwl.nlines + conswl.nlines + cmdwl.nlines);
+    */
     exit(0);
 }
 
@@ -11,7 +19,7 @@ void ncurses_init(void)
     signal(SIGINT, sigint);
 
     initscr();
-    if (LINES < 50 || COLS < 140) {
+    if (LINES < 25 || COLS < 115) {
         endwin();
         fprintf(stderr, "To small window! lines: %d, cols: %d. Need 50/140\n", LINES, COLS);
         exit(1);
@@ -26,7 +34,7 @@ void ncurses_init(void)
     // keypad(stdscr, true);
     curs_set(1);
 
-    asswl.nlines = LINES / 4;
+    asswl.nlines = MAX(14, LINES/4);
     asswl.ncols = COLS-65;
     asswl.begin_y = 1;
     asswl.begin_x = 0;
@@ -36,20 +44,28 @@ void ncurses_init(void)
     regswl.begin_y = asswl.begin_y;
     regswl.begin_x = asswl.ncols + asswl.begin_x + 1;
 
-    stackwl.nlines = LINES - regswl.nlines - 1;
+    folwl.nlines = MAX(5, LINES/4);
+    folwl.ncols = asswl.ncols;
+    folwl.begin_y = asswl.begin_y + asswl.nlines;
+    folwl.begin_x = 0;
+
+    // stackwl.nlines = LINES - regswl.nlines - 1;
+    stackwl.nlines = folwl.nlines;
     stackwl.ncols = regswl.ncols;
     stackwl.begin_y = asswl.begin_y + asswl.nlines ;
     stackwl.begin_x = regswl.begin_x;
 
-    conswl.nlines = LINES - asswl.nlines - 3;
-    conswl.ncols = COLS - stackwl.ncols - 1;
-    conswl.begin_y = asswl.nlines + 1;
+    // conswl.nlines = LINES - asswl.nlines - 3;
+    conswl.nlines = (LINES - asswl.nlines - folwl.nlines - 2);
+    conswl.ncols = COLS - 2;
+    conswl.begin_y = folwl.begin_y + folwl.nlines;
     conswl.begin_x = 1;
 
     cmdwl.nlines = 1;
     cmdwl.ncols = conswl.ncols - 1;
-    cmdwl.begin_y = conswl.begin_y + conswl.nlines + 1;
+    cmdwl.begin_y = conswl.begin_y + conswl.nlines;
     cmdwl.begin_x = 0;
+
 
     assw = newwin(asswl.nlines, asswl.ncols, asswl.begin_y, asswl.begin_x);
     box(assw, 0, 0);
@@ -65,6 +81,9 @@ void ncurses_init(void)
     stackw = newwin(stackwl.nlines, stackwl.ncols, stackwl.begin_y, stackwl.begin_x);
     box(stackw, 0, 0);
 
+    folw = newwin(folwl.nlines, folwl.ncols, folwl.begin_y, folwl.begin_x);
+    box(folw, 0, 0);
+
     cmdw = newwin(cmdwl.nlines, cmdwl.ncols, cmdwl.begin_y, cmdwl.begin_x);
     // box(cmdw, 0, 0);
 
@@ -78,6 +97,7 @@ void ncurses_init(void)
     wrefresh(consw);
     wrefresh(stackw);
     wrefresh(cmdw);
+    wrefresh(folw);
     spos = 0;
 }
 
@@ -124,6 +144,73 @@ void redisassemble_code(uc_engine *uc, uint64_t ip, size_t len)
     xfree(new_code);
 }
 
+void update_follow_window(uc_engine *uc, uint64_t addr)
+{
+    int lines = folwl.nlines - 2;
+    size_t len = lines * 16;
+    struct memory_map *m;
+    uint8_t *bytes;
+    int i, j, curr_line, y, x;
+    uc_err err;
+
+    wclear(folw);
+
+    m = mmap_for_address(addr);
+    if ( (addr + len) > (m->baseaddr + m->len) ) {
+        len = MIN(1024, (m->baseaddr + m->len) - addr);
+    }
+
+    bytes = xmalloc(len);
+    if ((err = uc_mem_read(uc, addr, bytes, len)) != UC_ERR_OK) {
+        mvwprintw(folw, 1, 1, "%s\n", uc_strerror(err));
+        goto ret;
+    }
+
+    for (i=0, curr_line=1; i<len; i+=16, curr_line++) {
+        mvwprintw(folw, curr_line, 2, "%08lx:  ", (i+addr));
+        for (j=0; j<16; j++) {
+            if ((i+j) >= len) {
+                wprintw(folw, "   ");
+            } else {
+                wprintw(folw, "%02x ", bytes[i+j]);
+                if (last_follow_bytes != NULL && last_follow_bytes[i+j] != bytes[i+j]) {
+                    getyx(folw, y, x);
+                    mvwchgat(folw, y, x-3, 2, A_BOLD, 0, NULL);
+                    wmove(folw, y, x);
+                }
+            }
+            if (j == 7)
+                wprintw(folw, " ");
+        }
+        for (j=0; j<16; j++) {
+            if (j==0)
+                wprintw(folw, " |");
+            if (bytes[i+j] >= 33 && bytes[i+j] <= 126) {
+                wprintw(folw, "%c", bytes[i+j]);
+            } else {
+                wprintw(folw, ".");
+            }
+            if (last_follow_bytes != NULL && last_follow_bytes[i+j] != bytes[i+j]) {
+                getyx(folw, y, x);
+                mvwchgat(folw, y, x-1, 1, A_BOLD, 0, NULL);
+                wmove(folw, y, x);
+            }
+            if ((i+j) >= len)
+                break;
+        }
+        wprintw(folw, "|\n");
+    }
+    wprintw(folw, "\n");
+
+ret:
+    if (last_follow_bytes != NULL)
+        xfree(last_follow_bytes);
+    last_follow_bytes = bytes;
+    box(folw, 0, 0);
+    mvwprintw(folw, 0, 2, " Follow ");
+    wrefresh(folw);
+}
+
 void handle_keyboard(uc_engine *uc, uint64_t ip)
 {
     struct memory_map *m;
@@ -144,6 +231,12 @@ void handle_keyboard(uc_engine *uc, uint64_t ip)
         }
     }
     printwass(spos, (asswl.nlines-2), ip);
+    if (opts->follow != -1) {
+        update_follow_window(uc, opts->follow);
+    } else if ((m = mmap_for_address(ip)) != NULL) {
+        update_follow_window(uc, m->baseaddr);
+    }
+
     mvwprintw(cmdw, 0, 0, RL_PROMPT, 0); wrefresh(cmdw);
 
     curs_set(2);
@@ -189,6 +282,7 @@ void usage(void)
     printf(" -r FILE                  Set initial values of registers.\n");
     printf(" -M FILE                  Load a memory map. (-r required).\n");
     printf("                          Overrides file and BASEADDRESS.\n");
+    printf(" -f FOLLOWADDR            Set address in follow window. (Default: code)\n");
     printf(" -b bp_addr[,bp_addr,..]  Set breakpoint(s).\n");
     printf(" -R                       Start in RUN(c) mode\n");
     printf("\nExamples:\n");
@@ -215,8 +309,12 @@ struct options *parseopts(int argc, char **argv)
     opts->mmap = NULL;
     stepmode = STEP;
     opts->os = LINUX;
+    opts->follow = -1;
 
-    while ((c = getopt(argc, argv, "a:m:B:b:O:r:M:R?")) != -1) {
+    // init
+    last_follow_bytes = NULL;
+
+    while ((c = getopt(argc, argv, "a:m:B:b:O:r:M:f:R?")) != -1) {
         switch(c) {
             case 'a': // process arch
                 if (strcmp(optarg, "x86") == 0) {
@@ -256,6 +354,10 @@ struct options *parseopts(int argc, char **argv)
                 for (i=1; (s = strtok(NULL, ",")) != NULL; i++) {
                     breakpoints[i] = strtoul(s, NULL, 0);
                 }
+                break;
+
+            case 'f':   // follow address
+                opts->follow = strtoul(optarg, NULL, 0);                
                 break;
 
             case 'r':   // init registers

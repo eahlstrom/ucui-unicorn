@@ -62,7 +62,6 @@ void printwass(unsigned int startpos, unsigned int lines, uint64_t ip)
     endpos = MIN(diss->count, startpos+lines) - 1;
 
     wclear(assw);
-    box(assw, 0, 0);
 
     // instruction pointer highlight
     init_pair(1, COLOR_BLACK, COLOR_WHITE);
@@ -80,7 +79,7 @@ void printwass(unsigned int startpos, unsigned int lines, uint64_t ip)
             }
         }
 
-        mvwprintw(assw, wline, 3, "%-03d 0x%08lx ", i+1, diss->insn[i].address);
+        mvwprintw(assw, wline, 2, "%-03d 0x%08lx ", i+1, diss->insn[i].address);
         for (j=0; j < 6; j++) {
             if (j < diss->insn[i].size) {
                 wprintw(assw, "%02X", (uint8_t) diss->insn[i].bytes[j]);
@@ -92,6 +91,8 @@ void printwass(unsigned int startpos, unsigned int lines, uint64_t ip)
         if (ip==diss->insn[i].address)
             wattroff(assw, COLOR_PAIR(1));
     }
+
+    box(assw, 0, 0);
     wrefresh(assw);
 }
 
