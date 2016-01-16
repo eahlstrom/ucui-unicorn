@@ -18,7 +18,7 @@ static void cmd_usage(void)
 {
     Command *c;
 
-    consw("Valid commands:\n");
+    consw("Valid commands: (enter repeat's previous command)\n");
     c = cmds;
     do {
         consw("  %-10s - %s\n", c->name, c->desc);

@@ -24,4 +24,10 @@ Command *create_command(char *name, CmdHandler handler, char *desc);
 void add_command(Command *root, Command *addcmd);
 Command *init_commands(void);
 
+// utilities
+void hexdump_uint8(uint8_t *code, unsigned int len, uint64_t baseaddress);
+void hexdump_uint16(uint8_t *code, unsigned int len, uint64_t baseaddress);
+void hexdump_uint32(uint8_t *code, unsigned int len, uint64_t baseaddress);
+void hexdump_uint64(uint8_t *code, unsigned int len, uint64_t baseaddress);
+
 #endif

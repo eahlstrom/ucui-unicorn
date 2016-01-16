@@ -31,7 +31,9 @@ static void run_prev_command(void)
 {
     HIST_ENTRY *he = history_get(where_history());
 
-    if (he != NULL) {
+    if (he == NULL) {
+        strcpy(readline_command, "help");
+    } else {
         strncpy(readline_command, he->line, MAX_CMD);
     }
 }

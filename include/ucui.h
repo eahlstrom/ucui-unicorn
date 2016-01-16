@@ -32,7 +32,9 @@
 #define MIN(a,b) ({ typeof (a) _a = (a); typeof (b) _b = (b); _a < _b ? _a : _b; })
 #define MAX(a,b) ({ typeof (a) _a = (a); typeof (b) _b = (b); _a > _b ? _a : _b; })
 #define CHECK_BIT(var, pos) ((var) & (1<<(pos)))
-#define consw(M, ...) wprintw(consw, M, ##__VA_ARGS__); wrefresh(consw)
+
+#define conswnf(M, ...) wprintw(consw, M, ##__VA_ARGS__)
+#define consw(M, ...) conswnf(M, ##__VA_ARGS__); wrefresh(consw)
 #define consw_info(M, ...) consw(">> " M, ##__VA_ARGS__)
 #define consw_err(M, ...) consw("[ERROR] (%s:%d) " M, __FILE__, __LINE__, ##__VA_ARGS__)
 #define xfree(P) free(P); P = NULL
@@ -129,7 +131,6 @@ struct arm_regs * read_arm_registers(uc_engine *uc);
 void printwass(unsigned int startpos, unsigned int endpos, uint64_t pc);
 struct disassembly * disass(uint8_t *code, unsigned int len, uint64_t baseaddress, cs_arch arch, cs_mode mode);
 struct readfile * readfile(char *filename);
-void hexdump(uint8_t *code, unsigned int len, uint64_t baseaddress);
 void verify_visible_ip(uint32_t pc);
 bool ip_aligned_to_disassembly(uint32_t pc);
 bool should_break(uint64_t pc);
