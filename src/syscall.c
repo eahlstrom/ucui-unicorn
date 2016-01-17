@@ -107,7 +107,7 @@ char * const_char_array_string(uc_engine *uc, void *saddr)
         }
         strcat(ms, "]");
     } else {
-        consw("NULL");
+        strcpy(ms, "NULL");
     }
     xfree(s2);
 
