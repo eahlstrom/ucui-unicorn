@@ -19,7 +19,7 @@ unicorn_install:
 install:
 	cp build/ucui /usr/local/bin
 
-clean: uninstall FORCE
+clean: FORCE
 	cd src; make clean
 
 uninstall:
