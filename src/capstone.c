@@ -93,6 +93,7 @@ void printwass(unsigned int startpos, unsigned int lines, uint64_t ip)
     }
 
     box(assw, 0, 0);
+    mvwprintw(assw, 0, 2, " Disassembly ");
     wrefresh(assw);
 }
 
