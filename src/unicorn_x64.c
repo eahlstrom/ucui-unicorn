@@ -130,7 +130,7 @@ void printstack_x64(uc_engine *uc) {
 
     uc_reg_read(uc, UC_X86_REG_RSP, &r_rsp);
     for (i=0; i<(stackwl.nlines-2); i++) {
-        mvwprintw(stackw, i+1, 2, "%016llx  ", r_rsp+(i*8));
+        mvwprintw(stackw, i+1, 2, "%08llx  ", r_rsp+(i*8));
         if (uc_mem_read(uc, r_rsp+(i*8), tmp, 8) == UC_ERR_OK) {
             wprintw(stackw, "%016llx  ", *t64);
             for(j=7; j>=0; j--) {
@@ -226,7 +226,7 @@ int unicorn_x64(uint8_t *code, unsigned int len, uint64_t baseaddress)
 
     uc_running = true;
     // emulate machine code in infinite time
-    err = uc_emu_start(uc, r->rip, baseaddress + len, 0, 0);
+    err = uc_emu_start(uc, r->rip, -1, 0, 0);
     if (err) {
         consw_err("");
         if (prev_regs_x64 != NULL && prev_regs_x64->rip != 0) {

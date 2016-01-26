@@ -34,7 +34,7 @@ void ncurses_init(void)
     // keypad(stdscr, true);
     curs_set(1);
 
-    asswl.nlines = MAX(14, LINES/4);
+    asswl.nlines = MAX(15, LINES/4);
     asswl.ncols = COLS-65;
     asswl.begin_y = 1;
     asswl.begin_x = 0;
@@ -167,7 +167,7 @@ void update_follow_window(uc_engine *uc, uint64_t addr)
     }
 
     for (i=0, curr_line=1; i<len; i+=16, curr_line++) {
-        mvwprintw(folw, curr_line, 2, "%08lx:  ", (i+addr));
+        mvwprintw(folw, curr_line, 2, "%08llx  ", (i+addr));
         for (j=0; j<16; j++) {
             if ((i+j) >= len) {
                 wprintw(folw, "   ");
@@ -219,7 +219,7 @@ void handle_keyboard(uc_engine *uc, uint64_t ip)
 
     verify_visible_ip(ip);
     if (!ip_aligned_to_disassembly(ip) && uc_running) {
-        consw_info("IP not aligned to disassembly @ %08x.", ip);
+        consw_info("IP not aligned to disassembly @ %08llx.", ip);
         if ((m = mmap_for_address(ip)) != NULL) {
             consw(" Re-disassembling at this address...\n");
             redisassemble_code(uc, ip, m->rf->len);

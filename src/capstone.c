@@ -39,7 +39,7 @@ void verify_visible_ip(uint32_t ip)
     }
 }
 
-bool ip_aligned_to_disassembly(uint32_t ip)
+bool ip_aligned_to_disassembly(uint64_t ip)
 {
     int i;
 
