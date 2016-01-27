@@ -122,10 +122,19 @@ bool should_break(uint64_t ip)
     return(false);
 }
 
-void redisassemble_code(uc_engine *uc, uint64_t ip, size_t len)
+void redisassemble_code(uc_engine *uc, uint64_t ip)
 {
     uint8_t *new_code;
+    struct memory_map *m;
+    size_t len;
     uc_err err;
+
+    if ((m = mmap_for_address(ip)) != NULL) {
+        len = (m->baseaddr + m->len) - ip;
+    } else {
+        consw_err("unmapped memory @ %llx\n", ip);
+        return;
+    }
 
     new_code = xmalloc(len);
     err = uc_mem_read(uc, ip, new_code, len);
@@ -155,9 +164,13 @@ void update_follow_window(uc_engine *uc, uint64_t addr)
 
     wclear(folw);
 
-    m = mmap_for_address(addr);
-    if ( (addr + len) > (m->baseaddr + m->len) ) {
-        len = MIN(1024, (m->baseaddr + m->len) - addr);
+    if ((m = mmap_for_address(addr)) != NULL) {
+        if ( (addr + len) > (m->baseaddr + m->len) ) {
+            len = MIN(1024, (m->baseaddr + m->len) - addr);
+        }
+    } else {
+        mvwprintw(folw, 1, 1, "unmapped memory @ 0x%llx", addr);
+        goto ret;
     }
 
     bytes = xmalloc(len);
@@ -222,7 +235,7 @@ void handle_keyboard(uc_engine *uc, uint64_t ip)
         consw_info("IP not aligned to disassembly @ %08llx.", ip);
         if ((m = mmap_for_address(ip)) != NULL) {
             consw(" Re-disassembling at this address...\n");
-            redisassemble_code(uc, ip, m->rf->len);
+            redisassemble_code(uc, ip);
             spos = 0;
         } else {
             consw(" Address is out-of-bounds.\n");

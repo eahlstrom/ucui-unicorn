@@ -135,7 +135,7 @@ struct readfile * readfile(char *filename);
 void verify_visible_ip(uint32_t pc);
 bool ip_aligned_to_disassembly(uint64_t pc);
 bool should_break(uint64_t pc);
-void redisassemble_code(uc_engine *uc, uint64_t ip, size_t len);
+void redisassemble_code(uc_engine *uc, uint64_t ip);
 
 void *xmalloc(size_t size);
 void wpprintw(WINDOW *w, unsigned char *str, uint32_t size);

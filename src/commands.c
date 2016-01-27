@@ -23,7 +23,7 @@ static command_state cmd_redisass(uc_engine *uc, uint64_t ip, char *args)
     consw_info("Re-disassembling code... ");
     if ((m = mmap_for_address(ip)) != NULL) {
         consw("0x%08x -> 0x%08x\n", m->baseaddr, m->baseaddr + m->rf->len);
-        redisassemble_code(uc, m->baseaddr, m->rf->len);
+        redisassemble_code(uc, m->baseaddr);
         verify_visible_ip(ip);
         printwass(spos, (asswl.nlines-2), ip);
     } else {
