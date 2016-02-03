@@ -23,9 +23,9 @@ struct disassembly * disass(uint8_t *code, unsigned int len, uint64_t baseaddr, 
     return(d);
 }
 
-void verify_visible_ip(uint32_t ip)
+void verify_visible_ip(uint64_t ip)
 {
-    int i;
+    size_t i;
 
     for(i=0; i < diss->count; i++) {
         if (diss->insn[i].address >= ip)
