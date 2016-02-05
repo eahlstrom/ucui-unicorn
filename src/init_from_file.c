@@ -17,6 +17,12 @@ static void parse_x86_register(char *line, struct x86_regs *wr)
         else if (strcmp(reg, "ebp") == 0) { wr->ebp = strtoul(val, NULL, 0); }
         else if (strcmp(reg, "esp") == 0) { wr->esp = strtoul(val, NULL, 0); }
         else if (strcmp(reg, "eip") == 0) { wr->eip = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "ss") == 0) { wr->ss = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "cs") == 0) { wr->cs = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "ds") == 0) { wr->ds = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "es") == 0) { wr->es = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "fs") == 0) { wr->fs = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "gs") == 0) { wr->gs = strtoul(val, NULL, 0); }
         // cannot modify!? else if (strcmp(reg, "eflags") == 0) { wr->eflags = strtoul(val, NULL, 0); }
         else { 
             printf("invalid register: %s\n", reg);
@@ -65,6 +71,12 @@ static void parse_x64_register(char *line, struct x64_regs *wr)
         else if (strcmp(reg, "r13") == 0) { wr->r13 = strtoul(val, NULL, 0); }
         else if (strcmp(reg, "r14") == 0) { wr->r14 = strtoul(val, NULL, 0); }
         else if (strcmp(reg, "r15") == 0) { wr->r15 = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "ss") == 0) { wr->ss = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "cs") == 0) { wr->cs = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "ds") == 0) { wr->ds = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "es") == 0) { wr->es = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "fs") == 0) { wr->fs = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "gs") == 0) { wr->gs = strtoul(val, NULL, 0); }
         // cannot modify!? else if (strcmp(reg, "eflags") == 0) { wr->eflags = strtoul(val, NULL, 0); }
         else { 
             printf("invalid register: %s\n", reg);

@@ -68,6 +68,7 @@ struct x64_regs {
   uint64_t rax, rbx, rcx, rdx, rsi;
   uint64_t r8, r9, r10, r11, r12, r13, r14, r15;
   uint64_t rdi, rbp, rsp, rip, eflags;
+  uint16_t ss, cs, ds, es, fs, gs;
 };
 
 struct arm_regs {

@@ -13,14 +13,20 @@ struct x64_regs * read_x64_registers(uc_engine *uc)
     uc_reg_read(uc, UC_X86_REG_RBP, &r->rbp);
     uc_reg_read(uc, UC_X86_REG_RSP, &r->rsp);
     uc_reg_read(uc, UC_X86_REG_RIP, &r->rip);
-    uc_reg_read(uc, UC_X86_REG_R8, &r->r8);
-    uc_reg_read(uc, UC_X86_REG_R9, &r->r9);
+    uc_reg_read(uc, UC_X86_REG_R8,  &r->r8);
+    uc_reg_read(uc, UC_X86_REG_R9,  &r->r9);
     uc_reg_read(uc, UC_X86_REG_R10, &r->r10);
     uc_reg_read(uc, UC_X86_REG_R11, &r->r11);
     uc_reg_read(uc, UC_X86_REG_R12, &r->r12);
     uc_reg_read(uc, UC_X86_REG_R13, &r->r13);
     uc_reg_read(uc, UC_X86_REG_R14, &r->r14);
     uc_reg_read(uc, UC_X86_REG_R15, &r->r15);
+    uc_reg_read(uc, UC_X86_REG_SS,  &r->ss);
+    uc_reg_read(uc, UC_X86_REG_CS,  &r->cs);
+    uc_reg_read(uc, UC_X86_REG_DS,  &r->ds);
+    uc_reg_read(uc, UC_X86_REG_ES,  &r->es);
+    uc_reg_read(uc, UC_X86_REG_FS,  &r->fs);
+    uc_reg_read(uc, UC_X86_REG_GS,  &r->gs);
     uc_reg_read(uc, UC_X86_REG_EFLAGS, &r->eflags);
     return(r);
 }
@@ -113,6 +119,12 @@ void printregs_x64(uc_engine *uc)
     wprintw(regsw, "%s", CHECK_BIT(r->eflags, 9) ? "IF ":"");
     wprintw(regsw, "%s", CHECK_BIT(r->eflags, 10) ? "DF ":"");
     wprintw(regsw, "%s", CHECK_BIT(r->eflags, 11) ? "OF ":"");
+
+    hl += 2;
+    dl += 1;
+    mvwprintw(regsw, hl, 31, "SS   CS   DS   ES   FS   GS");
+    mvwprintw(regsw, dl, 31, "%04x %04x %04x %04x %04x %04x", r->ss, r->cs, r->ds, r->es, r->fs, r->gs);
+
 
     wrefresh(regsw);
 
@@ -216,6 +228,12 @@ int unicorn_x64(uint8_t *code, unsigned int len, uint64_t baseaddress)
     if (r->r13 != 0) { uc_reg_write(uc, UC_X86_REG_R13, &r->r13); }
     if (r->r14 != 0) { uc_reg_write(uc, UC_X86_REG_R14, &r->r14); }
     if (r->r15 != 0) { uc_reg_write(uc, UC_X86_REG_R15, &r->r15); }
+    if (r->ss != 0) { uc_reg_write(uc, UC_X86_REG_SS, &r->ss); }
+    if (r->cs != 0) { uc_reg_write(uc, UC_X86_REG_CS, &r->cs); }
+    if (r->ds != 0) { uc_reg_write(uc, UC_X86_REG_DS, &r->ds); }
+    if (r->es != 0) { uc_reg_write(uc, UC_X86_REG_ES, &r->es); }
+    if (r->fs != 0) { uc_reg_write(uc, UC_X86_REG_FS, &r->fs); }
+    if (r->gs != 0) { uc_reg_write(uc, UC_X86_REG_GS, &r->gs); }
     if (r->eflags != 0) { uc_reg_write(uc, UC_X86_REG_EFLAGS, &r->eflags); }
 
     // tracing all instructions by having @begin > @end

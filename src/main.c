@@ -34,7 +34,7 @@ void ncurses_init(void)
     // keypad(stdscr, true);
     curs_set(1);
 
-    asswl.nlines = MAX(15, LINES/4);
+    asswl.nlines = MAX(16, LINES/4);
     asswl.ncols = COLS-65;
     asswl.begin_y = 1;
     asswl.begin_x = 0;

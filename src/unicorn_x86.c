@@ -12,9 +12,12 @@ struct x86_regs * read_x86_registers(uc_engine *uc)
     uc_reg_read(uc, UC_X86_REG_EDI, &r->edi);
     uc_reg_read(uc, UC_X86_REG_EBP, &r->ebp);
     uc_reg_read(uc, UC_X86_REG_ESP, &r->esp);
+    uc_reg_read(uc, UC_X86_REG_SS, &r->ss);
     uc_reg_read(uc, UC_X86_REG_CS, &r->cs);
     uc_reg_read(uc, UC_X86_REG_DS, &r->ds);
+    uc_reg_read(uc, UC_X86_REG_ES, &r->es);
     uc_reg_read(uc, UC_X86_REG_FS, &r->fs);
+    uc_reg_read(uc, UC_X86_REG_GS, &r->gs);
     uc_reg_read(uc, UC_X86_REG_EIP, &r->eip);
     uc_reg_read(uc, UC_X86_REG_EFLAGS, &r->eflags);
     return(r);
@@ -202,6 +205,12 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
     if (r->edi != 0) { uc_reg_write(uc, UC_X86_REG_EDI, &r->edi); }
     if (r->ebp != 0) { uc_reg_write(uc, UC_X86_REG_EBP, &r->ebp); }
     if (r->esp != 0) { uc_reg_write(uc, UC_X86_REG_ESP, &r->esp); }
+    if (r->ss != 0) { uc_reg_write(uc, UC_X86_REG_SS, &r->ss); }
+    if (r->cs != 0) { uc_reg_write(uc, UC_X86_REG_CS, &r->cs); }
+    if (r->ds != 0) { uc_reg_write(uc, UC_X86_REG_DS, &r->ds); }
+    if (r->es != 0) { uc_reg_write(uc, UC_X86_REG_ES, &r->es); }
+    if (r->fs != 0) { uc_reg_write(uc, UC_X86_REG_FS, &r->fs); }
+    if (r->gs != 0) { uc_reg_write(uc, UC_X86_REG_GS, &r->gs); }
     if (r->eflags != 0) { uc_reg_write(uc, UC_X86_REG_EFLAGS, &r->eflags); }
 
     // tracing all instructions by having @begin > @end
