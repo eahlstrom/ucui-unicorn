@@ -148,6 +148,17 @@ static command_state cmd_follow(uc_engine *uc, uint64_t ip, char *args)
     return(MORE_COMMANDS);
 }
 
+static command_state cmd_cr0(uc_engine *uc, uint64_t ip, char *args)
+{
+    uint64_t cr0_reg;
+
+    uc_reg_read(uc, UC_X86_REG_CR0, &cr0_reg);
+    consw("cr0: %08x\n", cr0_reg);
+    consw(" PE, Protected Mode Enable: %s\n", CHECK_BIT(cr0_reg, 0) ? "true" : false);
+
+    return(MORE_COMMANDS);
+}
+
 Command *init_commands(void)
 {
     Command *root;
@@ -159,6 +170,8 @@ Command *init_commands(void)
     add_command(root, create_command("list",  &cmd_list,       "change assembly window listing"));
     add_command(root, create_command("hx",    &cmd_hx,         "hexdump address"));
     add_command(root, create_command("follow",&cmd_follow,     "set follow address"));
+    if (opts->arch == X86)
+        add_command(root, create_command("cr0",   &cmd_cr0,        "show processor mode"));
 
     return(root);
 }
