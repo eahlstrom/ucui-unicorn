@@ -10,6 +10,8 @@ enum linux_syscall {
   SYS_CHMOD,
   SYS_SIGNAL,
   SYS_IOCTL,
+  SYS_SETUID,
+  SYS_SETGID,
   SYS_SETREUID,
   SYS_CLOSE,
   SYS_ALARM,

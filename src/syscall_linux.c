@@ -20,6 +20,8 @@ enum linux_syscall * linux_syscall_map_x86(void)
     sm[6] = SYS_CLOSE;
     sm[11] = SYS_EXECVE;
     sm[15] = SYS_CHMOD;
+    sm[23] = SYS_SETUID;
+    sm[24] = SYS_SETGID;
     sm[27] = SYS_ALARM;
     sm[34] = SYS_NICE;
     sm[37] = SYS_KILL;
@@ -198,6 +200,14 @@ int32_t linux_syscall_printw(
 
         case SYS_SETREUID:
             consw("SYS_SETREUID(%d, %d)\n", *((uid_t*)arg0), *((uid_t*)arg1));
+            break;
+
+        case SYS_SETUID:
+            consw("SYS_SETUID(%d)\n", *((int*)arg0));
+            break;
+
+        case SYS_SETGID:
+            consw("SYS_SETGID(%d)\n", *((int*)arg0));
             break;
 
         case SYS_CLOSE:
