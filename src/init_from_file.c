@@ -23,7 +23,7 @@ static void parse_x86_register(char *line, struct x86_regs *wr)
         else if (strcmp(reg, "es") == 0) { wr->es = strtoul(val, NULL, 0); }
         else if (strcmp(reg, "fs") == 0) { wr->fs = strtoul(val, NULL, 0); }
         else if (strcmp(reg, "gs") == 0) { wr->gs = strtoul(val, NULL, 0); }
-        // cannot modify!? else if (strcmp(reg, "eflags") == 0) { wr->eflags = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "eflags") == 0) { wr->eflags = strtoul(val, NULL, 0); }
         else { 
             printf("invalid register: %s\n", reg);
             exit(1);
@@ -77,7 +77,7 @@ static void parse_x64_register(char *line, struct x64_regs *wr)
         else if (strcmp(reg, "es") == 0) { wr->es = strtoul(val, NULL, 0); }
         else if (strcmp(reg, "fs") == 0) { wr->fs = strtoul(val, NULL, 0); }
         else if (strcmp(reg, "gs") == 0) { wr->gs = strtoul(val, NULL, 0); }
-        // cannot modify!? else if (strcmp(reg, "eflags") == 0) { wr->eflags = strtoul(val, NULL, 0); }
+        else if (strcmp(reg, "eflags") == 0) { wr->eflags = strtoul(val, NULL, 0); }
         else { 
             printf("invalid register: %s\n", reg);
             exit(1);
