@@ -155,24 +155,26 @@ void *init_registers_from_file(char *file)
     rf = readfile(file);
     line = strtok((char*)rf->bytes, "\n");
     do {
-        if (opts->arch == X86 && opts->mode == MODE_32) {
-            if (r == NULL) {
-                r = xmalloc(sizeof(struct x86_regs));
-                memset(r, 0, sizeof(struct x86_regs));
+        if (line[0] != '#' && strnlen(line, 4) >= 4) {
+            if (opts->arch == X86 && opts->mode == MODE_32) {
+                if (r == NULL) {
+                    r = xmalloc(sizeof(struct x86_regs));
+                    memset(r, 0, sizeof(struct x86_regs));
+                }
+                parse_x86_register(line, r);
+            } else if (opts->arch == X86 && opts->mode == MODE_64) {
+                if (r == NULL) {
+                    r = xmalloc(sizeof(struct x64_regs));
+                    memset(r, 0, sizeof(struct x64_regs));
+                }
+                parse_x64_register(line, r);
+            } else if (opts->arch == ARM && opts->mode == MODE_32) {
+                if (r == NULL) {
+                    r = xmalloc(sizeof(struct arm_regs));
+                    memset(r, 0, sizeof(struct arm_regs));
+                }
+                parse_arm_register(line, r);
             }
-            parse_x86_register(line, r);
-        } else if (opts->arch == X86 && opts->mode == MODE_64) {
-            if (r == NULL) {
-                r = xmalloc(sizeof(struct x64_regs));
-                memset(r, 0, sizeof(struct x64_regs));
-            }
-            parse_x64_register(line, r);
-        } else if (opts->arch == ARM && opts->mode == MODE_32) {
-            if (r == NULL) {
-                r = xmalloc(sizeof(struct arm_regs));
-                memset(r, 0, sizeof(struct arm_regs));
-            }
-            parse_arm_register(line, r);
         }
     } while((line = strtok(NULL, "\n")) != NULL);
 
