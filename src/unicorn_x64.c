@@ -183,7 +183,7 @@ int unicorn_x64(uint8_t *code, unsigned int len, uint64_t baseaddress)
 {
     uc_engine *uc;
     uc_err err;
-    uc_hook trace1, trace2;
+    uc_hook trace1, trace2, trace3;
     struct x64_regs *r;
     bool regs_from_file = false;
 
@@ -240,7 +240,8 @@ int unicorn_x64(uint8_t *code, unsigned int len, uint64_t baseaddress)
     uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_x64, NULL, 1, 0);
 
     // handle interrupt ourself
-    uc_hook_add(uc, &trace2, UC_HOOK_INSN, hook_intr_x64, NULL, UC_X86_INS_SYSENTER);
+    uc_hook_add(uc, &trace2, UC_HOOK_INSN, hook_intr_x64, NULL, 1, 0, UC_X86_INS_SYSENTER);
+    uc_hook_add(uc, &trace3, UC_HOOK_INSN, hook_intr_x64, NULL, 1, 0, UC_X86_INS_SYSCALL);
 
     uc_running = true;
     // emulate machine code in infinite time

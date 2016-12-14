@@ -217,7 +217,7 @@ int unicorn_x86(uint8_t *code, unsigned int len, uint64_t baseaddress)
     uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_x86, NULL, 1, 0);
 
     // handle interrupt ourself
-    uc_hook_add(uc, &trace2, UC_HOOK_INTR, hook_intr_x86, NULL);
+    uc_hook_add(uc, &trace2, UC_HOOK_INTR, hook_intr_x86, NULL, 1, 0);
 
     uc_running = true;
     // emulate machine code in infinite time

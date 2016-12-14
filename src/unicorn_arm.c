@@ -206,7 +206,7 @@ int unicorn_arm(uint8_t *code, unsigned int len, uint64_t baseaddress)
     uc_hook_add(uc, &trace1, UC_HOOK_CODE, hook_code_arm, NULL, 1, 0);
 
     // handle interrupt ourself
-    uc_hook_add(uc, &trace2, UC_HOOK_INTR, hook_intr_arm, NULL);
+    uc_hook_add(uc, &trace2, UC_HOOK_INTR, hook_intr_arm, NULL, 1, 0);
 
     // emulate machine code in infinite time
     err = uc_emu_start(uc, r->pc, baseaddress + len, 0, 0);
