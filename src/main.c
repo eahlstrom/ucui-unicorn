@@ -27,6 +27,7 @@ void ncurses_init(void)
     ucui_readline_init();
 
     start_color();
+    use_default_colors();
     cbreak();
     noecho();
     // nonl();
